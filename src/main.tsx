@@ -1,8 +1,13 @@
-import ReactDOM from "react-dom";
-import { App } from "./App"
+import { configure } from 'mobx'
+import ReactDOM from 'react-dom/client'
+import { App } from './App'
 
-const root = document.querySelector('#root') as any
+configure({
+  enforceActions: 'never',
+})
 
-if (!root) throw new Error("Root not found");
+const container = document.querySelector('#root') as any
+if (!container) throw new Error('Root not found')
 
-ReactDOM.render(<App />, root)
+const root = ReactDOM.createRoot(container)
+root.render(<App />)
