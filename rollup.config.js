@@ -1,3 +1,4 @@
+const { defineConfig } = require("rollup");
 import html2 from "rollup-plugin-html2";
 import typescript from "@rollup/plugin-typescript";
 import del from "rollup-plugin-delete";
@@ -9,10 +10,11 @@ import serve from "rollup-plugin-serve";
 import livereload from "rollup-plugin-livereload";
 import external from "rollup-plugin-peer-deps-external";
 import replace from "@rollup/plugin-replace";
-import * as dns from 'dns/promises'
 import * as os from 'os'
-import { readFileSync } from "fs";
-const { defineConfig } = require("rollup");
+import * as fs from "fs";
+import postcss from 'rollup-plugin-postcss';
+
+fs.rmSync('./dist', {recursive:true,force:true})
 
 const PORT = 10001
 
@@ -25,8 +27,8 @@ export default defineConfig(async () => {
   );
 
   const https = {
-    key: readFileSync('./tools/https/key.pem'),
-    cert: readFileSync('./tools/https/cert.pem'),
+    key: fs.readFileSync('./tools/https/key.pem'),
+    cert: fs.readFileSync('./tools/https/cert.pem'),
   }
 
   /** @type {import("rollup").RollupOptions} */
@@ -35,8 +37,9 @@ export default defineConfig(async () => {
     output: {
       dir: 'dist',
       format: 'iife',
-      entryFileNames: 'bundle-[hash].js'
+      entryFileNames: 'bundle-[hash].js',
     },
+    context: 'this',
   
     plugins: [
       replace({
@@ -44,14 +47,14 @@ export default defineConfig(async () => {
       }),
       external(),
       nodeResolve({extensions: ['.ts', '.tsx']}),
-      isProd && del({targets: './dist'}),
+      isProd && del({targets: './dist/*',}),
       babel({
+        exclude: 'node_modules/**',
         presets: [
           ['@babel/preset-react', { runtime: "automatic", "loose": false }],
         ],
         plugins: [
           ["@babel/plugin-proposal-decorators", { "legacy": true }],
-          // ["@babel/plugin-proposal-class-properties", { "loose": false }]
         ]
       }),
       typescript(),
@@ -61,8 +64,16 @@ export default defineConfig(async () => {
           comments: false
         }
       }),
+
+      postcss({
+        extract: true,
+        modules: true,
+        minimize: isProd
+      }),
+      
       html2({
         template: 'src/index.html',
+
       }),
       serve({
         contentBase: 'dist',

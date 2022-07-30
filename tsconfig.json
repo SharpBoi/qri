@@ -9,7 +9,7 @@
     "module": "esnext",
     "jsx": "react-jsx",
     "sourceMap": true,
-    "outDir": "dist",
+    // "outDir": "dist",
     "strict": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,

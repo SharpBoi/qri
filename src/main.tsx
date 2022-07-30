@@ -1,3 +1,5 @@
+import './normalize.scss'
+import './index.scss'
 import { configure } from 'mobx'
 import ReactDOM from 'react-dom/client'
 import { App } from './App'
