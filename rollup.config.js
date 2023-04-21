@@ -13,17 +13,20 @@ import replace from "@rollup/plugin-replace";
 import * as os from 'os'
 import * as fs from "fs";
 import postcss from 'rollup-plugin-postcss';
-
-fs.rmSync('./dist', {recursive:true,force:true})
+import { lookup } from "dns/promises";
 
 const PORT = 10001
+const LOCAL_IP = os.networkInterfaces().en0[1].address
+const DIST = './public/dist'
 
 const isDev = process.env.NODE_ENV === 'development'
 const isProd = !isDev
 
+fs.rmSync(DIST, {recursive:true,force:true})
+
 export default defineConfig(async () => {
   console.warn(
-    `!!! you can also run at ${os.networkInterfaces().en0[1].address}:${PORT}`
+    `!!! you can also run at https://${LOCAL_IP}:${PORT}`
   );
 
   const https = {
@@ -35,9 +38,10 @@ export default defineConfig(async () => {
   const config = {
     input: "./src/main.tsx",
     output: {
-      dir: 'dist',
-      format: 'iife',
+      dir: DIST,
+      format: 'cjs',
       entryFileNames: 'bundle-[hash].js',
+      sourcemap: true
     },
     context: 'this',
   
@@ -47,7 +51,7 @@ export default defineConfig(async () => {
       }),
       external(),
       nodeResolve({extensions: ['.ts', '.tsx']}),
-      isProd && del({targets: './dist/*',}),
+      del({targets: `${DIST}/*`,}),
       babel({
         exclude: 'node_modules/**',
         presets: [
@@ -73,18 +77,17 @@ export default defineConfig(async () => {
       
       html2({
         template: 'src/index.html',
-
       }),
       serve({
-        contentBase: 'dist',
-        historyApiFallback: true,
+        contentBase: DIST,
+        host: LOCAL_IP,
         port: PORT,
         https
       }),
       livereload({
-        watch: 'dist',
+        watch: DIST,
         port: PORT,
-        https
+        https,
       })
     ],
 

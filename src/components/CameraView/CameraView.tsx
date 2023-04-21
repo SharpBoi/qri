@@ -1,52 +1,80 @@
 import { WebCam } from '@/classes/WebCam'
-import { useResizeObserver } from '@/hooks/useResizeObserver'
 import { cn } from '@/util/cn'
 import { noop } from '@/util/noop'
 import { WithClass } from '@/util/props'
 import { observer } from 'mobx-react-lite'
-import { useEffect, useRef } from 'react'
+import QrScanner from 'qr-scanner'
+import {
+  CSSProperties,
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react'
 import style from './index.scss'
 
 export type CameraViewProps = WithClass & {
   cam?: WebCam
   onCam?: (cam: WebCam) => void
-  domControlsStreamSize?: boolean
 }
 export const CameraView = observer(
-  ({
-    cam = new WebCam(),
-    onCam = noop,
-    className,
-    domControlsStreamSize = false,
-  }: CameraViewProps) => {
-    const videoRef = useRef<HTMLVideoElement>(null)
-    const { contentRect } = useResizeObserver(videoRef.current) || {}
+  forwardRef<HTMLVideoElement | null, CameraViewProps>(
+    ({ cam: camProp, onCam = noop, className }, fref) => {
+      const ref = useRef<HTMLVideoElement>(null)
 
-    useEffect(() => void onCam(cam), [cam])
+      const [cam] = useState(() => camProp || new WebCam())
 
-    useEffect(() => {
-      const video = videoRef.current
-      if (!video) return
+      useEffect(() => onCam(cam), [cam])
 
-      video.srcObject = cam.$mediaStream
+      // Handle passing stream to video node
+      useEffect(() => {
+        const video = ref.current
+        if (!video) return
 
-      return () => void (video.srcObject = null)
-    }, [cam.$mediaStream])
+        video.srcObject = cam.$stream || null
 
-    useEffect(() => {
-      if (!domControlsStreamSize) return
-      if (!contentRect) return
+        return () => {
+          video.srcObject = null
+        }
+      }, [cam.$stream])
 
-      const { width, height } = contentRect
+      useImperativeHandle<HTMLVideoElement | null, HTMLVideoElement | null>(
+        fref,
+        () => ref.current
+      )
 
-      cam.setSize({
-        width: width,
-        height: height,
-      })
-    }, [contentRect])
+      // TEST Handle qr
+      useEffect(() => {
+        const video = ref.current
+        if (!video) return
 
-    return (
-      <video className={cn(style.video_view, className)} autoPlay ref={videoRef}></video>
-    )
-  }
+        // const qr = new QrScanner(
+        //   video,
+        //   r => {
+        //     console.log(r)
+        //   },
+        //   {
+        //     // highlightScanRegion: true,
+        //     // highlightCodeOutline: true,
+        //   }
+        // )
+        // qr.start()
+      }, [])
+
+      const flipStyle: CSSProperties = { transform: `scaleX(${cam.$flip})` }
+
+      return (
+        <video
+          style={flipStyle}
+          className={cn(style.video_view, className)}
+          autoPlay
+          disablePictureInPicture
+          playsInline
+          controls={false}
+          ref={ref}
+        ></video>
+      )
+    }
+  )
 )

@@ -17,6 +17,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
 
-    "experimentalDecorators": true
+    "strictNullChecks": true,
+
+    "experimentalDecorators": true,
+    "useDefineForClassFields": true
   }
 }

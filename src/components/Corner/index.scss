@@ -1,0 +1,30 @@
+.box {
+  $SIZE: 65px;
+
+  position: relative;
+
+  width: $SIZE;
+  height: $SIZE;
+
+  $THIC: 10px;
+
+  .stick {
+    position: absolute;
+    background-color: white;
+    border-radius: 1000px;
+
+    &.top {
+      top: 0;
+      left: 0;
+      right: 0;
+      height: $THIC;
+    }
+
+    &.left {
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: $THIC;
+    }
+  }
+}

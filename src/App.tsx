@@ -1,8 +1,15 @@
 import { useEffect, useRef } from 'react'
-import { FacingMode } from './types/facing'
 import { observer } from 'mobx-react-lite'
-import { CameraView } from './components/CameraView/CameraView'
 import { CodeScanView } from './components/CodeScanView/CodeScanView'
+import { configure } from 'mobx'
+
+configure({
+  enforceActions: 'never',
+})
+
+screen.orientation.lock('portrait')
+
+console.re ||= console
 
 export const App = observer(() => {
   useEffect(() => {}, [])
