@@ -5,43 +5,55 @@
   height: 100%;
 
   overflow: hidden;
+}
 
-  .video_box {
-    width: 100%;
+.video_box {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .video {
     height: 100%;
-    overflow: hidden;
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    .video {
-      height: 100%;
-
-      &.flip {
-        width: 100%;
-        height: auto;
-      }
+    &.flip {
+      width: 100%;
+      height: auto;
     }
   }
+}
 
-  .sight_box {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
+.controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
 
-    .sight {
-      position: absolute;
-      left: 50%;
-      top: 50%;
+  margin-bottom: 50px;
 
-      transform: translateX(-50%) translateY(-50%);
+  display: grid;
+  grid-template-columns: 200px 35px;
+  grid-template-rows: 55px 35px;
+  grid-template-areas:
+    'L F'
+    'C S';
+  gap: 10px;
+  justify-content: center;
 
-      width: 200px;
-      height: 200px;
-
-      box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.228);
-      border-radius: 10px;
-    }
+  .file {
+    grid-area: F;
+  }
+  .flash {
+    grid-area: L;
+    height: 100%;
+  }
+  .settings {
+    grid-area: S;
+  }
+  .select {
+    grid-area: C;
   }
 }

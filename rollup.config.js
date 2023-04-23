@@ -13,7 +13,9 @@ import replace from "@rollup/plugin-replace";
 import * as os from 'os'
 import * as fs from "fs";
 import postcss from 'rollup-plugin-postcss';
-import { lookup } from "dns/promises";
+import svgr from '@svgr/rollup'
+import alias from '@rollup/plugin-alias';
+import path, { dirname } from "path";
 
 const PORT = 10001
 const LOCAL_IP = os.networkInterfaces().en0[1].address
@@ -21,8 +23,6 @@ const DIST = './public/dist'
 
 const isDev = process.env.NODE_ENV === 'development'
 const isProd = !isDev
-
-fs.rmSync(DIST, {recursive:true,force:true})
 
 export default defineConfig(async () => {
   console.warn(
@@ -46,7 +46,14 @@ export default defineConfig(async () => {
     context: 'this',
   
     plugins: [
+      alias({
+        entries: {
+          '@': path.resolve(__dirname, 'src')
+        }
+      }),
+      
       replace({
+        preventAssignment: true,
         'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       }),
       external(),
@@ -68,6 +75,8 @@ export default defineConfig(async () => {
           comments: false
         }
       }),
+
+      svgr({}),
 
       postcss({
         extract: true,

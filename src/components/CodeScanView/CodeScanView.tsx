@@ -1,44 +1,82 @@
 import { WebCam } from '@/classes/WebCam'
-import { useResizeObserver } from '@/hooks/useResizeObserver'
-import { nil } from '@/util/nil'
 import { observer } from 'mobx-react-lite'
-import { useEffect, useRef, useState } from 'react'
-import { CameraView } from '../CameraView/CameraView'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { WebCamView } from '../WebCamView/WebCamView'
 import style from './index.scss'
-import { $bar } from '@/store/url-bar'
 import { $orientation, Orientation } from '@/store/orientation'
 import { cn } from '@/util/cn'
-import { Corner } from '../Corner'
+import QrScanner from 'qr-scanner'
+import { Await } from '../Await'
+import { Button } from '../_uikit/Button'
+import { CornersFrame } from '../_uikit/CornersFrame'
+import { SelectList } from '../_uikit/SelectList'
+import WebcamSVG from '@/assets/webcam.svg'
+import { WebcamDropdownList } from '../_dropdowns/WebcamDropdownList'
 
 const cam = new WebCam()
 
 export type CodeScanViewProps = {
-  cam?: WebCam
   autoPlay?: boolean
 }
-export const CodeScanView = observer(
-  ({
-    // cam = new WebCam({ width: 2000, height: 1000 }),
-    autoPlay = false,
-  }: CodeScanViewProps) => {
-    useEffect(() => {
-      if (autoPlay) cam.start()
-    }, [cam])
+export const CodeScanView = observer(({ autoPlay = false }: CodeScanViewProps) => {
+  const videoRef = useRef<HTMLVideoElement>(null)
 
-    const flip = $orientation.$value === Orientation.landscape
+  useEffect(() => {
+    // if (autoPlay) cam.startDefault()
+  }, [cam])
 
-    return (
-      <div className={style.code_scan_box}>
-        <div className={style.sight_box}>
-          <Corner />
-          {/* <div onClick={() => cam.turnOnLight()} className={style.sight}></div> */}
-        </div>
-        <div className={style.video_box}>
-          {cam && (
-            <CameraView className={cn(style.video, flip && style.flip)} cam={cam} />
-          )}
-        </div>
-      </div>
-    )
+  const flip = $orientation.$value === Orientation.landscape
+
+  // TEST Handle qr
+  // useEffect(() => {
+  //   ;(async () => {
+  //     if (!cam.$stream) return
+  //     if (!videoRef.current) return
+
+  //     const qr = new QrScanner(
+  //       videoRef.current,
+  //       r => {
+  //         console.log(r)
+  //       },
+  //       {
+  //         // highlightScanRegion: true,
+  //         // highlightCodeOutline: true,
+  //       }
+  //     )
+  //     await qr.start()
+  //   })()
+  // }, [cam.$stream])
+
+  function handleCamSelect(id: string) {
+    cam.stop()
+    cam.start(id)
   }
-)
+
+  return (
+    <div className={style.code_scan_box}>
+      <div className={style.video_box}>
+        {cam && (
+          <WebCamView
+            ref={videoRef}
+            className={cn(style.video, flip && style.flip)}
+            cam={cam}
+          />
+        )}
+      </div>
+
+      <CornersFrame />
+
+      <div className={style.controls}>
+        <Button onClick={() => cam.turnOnLight()} className={style.flash}>
+          Light
+        </Button>
+        <Button className={style.file}>F</Button>
+        <WebcamDropdownList
+          selectId={cam.$capabilities?.deviceId}
+          onSelect={handleCamSelect}
+        />
+        <Button className={style.settings}>S</Button>
+      </div>
+    </div>
+  )
+})

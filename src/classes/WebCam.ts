@@ -29,11 +29,10 @@ export class WebCam {
   }
 
   @observable.ref public $stream?: MediaStream
+  @observable.ref public $video?: HTMLVideoElement
   @observable.ref public $capabilities?: MediaTrackCapabilities
 
-  @observable.ref private $track: MediaStreamTrack | null = null
-
-  @observable private $isSizeNormalized = false
+  @observable.ref private $track?: MediaStreamTrack | null
   @observable private $props: CamProps = {}
 
   constructor(props?: CamProps) {
@@ -51,7 +50,6 @@ export class WebCam {
       }
     )
 
-    this.normalizeSizeRX()
     this.applySizeRX()
   }
 
@@ -66,24 +64,47 @@ export class WebCam {
   }
 
   @action
-  public async start() {
-    this.$stream = await navigator.mediaDevices.getUserMedia({
+  public async start(deviceId: string) {
+    await this._start({
+      audio: false,
+      video: {
+        deviceId: { exact: deviceId },
+        frameRate: { ideal: 60 },
+        noiseSuppression: { ideal: true },
+        autoGainControl: { ideal: true },
+        zoom: 0,
+        width: { ideal: MAX_CAM_SIZE },
+        height: { ideal: MAX_CAM_SIZE },
+      },
+    })
+  }
+
+  @action
+  public async startDefault() {
+    await this._start({
       audio: false,
       video: {
         facingMode: [FacingMode.environment],
         frameRate: { ideal: 60 },
-        noiseSuppression: true,
-        autoGainControl: true,
+        noiseSuppression: { ideal: true },
+        autoGainControl: { ideal: true },
         zoom: 0,
         width: { ideal: MAX_CAM_SIZE },
         height: { ideal: MAX_CAM_SIZE },
-        // aspectRatio: 16 / 9,
+
+        torch: true,
+        advanced: [
+          {
+            torch: true,
+          },
+        ],
       },
     })
+  }
 
-    this.$track = this.$stream.getVideoTracks()[0]
-
-    this.$capabilities = this.$track.getCapabilities()
+  public stop() {
+    this.$track?.stop()
+    this.$stream?.stop?.()
   }
 
   @action
@@ -93,19 +114,59 @@ export class WebCam {
   }
 
   public async turnOnLight() {
-    if (!this.$track) return
+    /////////////////
+    // const media = await navigator.mediaDevices.getUserMedia({
+    //   video: {
+    //     torch: true,
+    //     advanced: [
+    //       {
+    //         torch: true,
+    //       },
+    //     ],
+    //   },
+    // })
 
-    const capture = new ImageCapture(this.$track)
-    capture.getPhotoCapabilities().then(() => {
-      this.$track!.applyConstraints({
-        advanced: [{ torch: true }],
-      })
+    const devices = await WebCam.enumerate()
+    const last = devices.at(-1)
+
+    const media = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: last?.deviceId },
     })
+
+    const track = media.getVideoTracks()[0]
+
+    await track.applyConstraints({
+      advanced: [{ torch: true }],
+    })
+
+    // ------------------
+    // if (!this.$track) return
+
+    // this.$track!.applyConstraints({
+    //   advanced: [{ torch: true }],
+    // })
+  }
+
+  @action
+  private async _start(constraints: MediaStreamConstraints) {
+    this.$stream = await navigator.mediaDevices.getUserMedia(constraints)
+
+    this.$track = this.$stream.getVideoTracks()[0]
+
+    this.$capabilities = this.$track.getCapabilities()
+
+    await this.normalizeSize()
+
+    this.$video = document.createElement('video')
+    this.$video.autoplay = true
+    this.$video.disablePictureInPicture = true
+    this.$video.playsInline = true
+    this.$video.controls = false
+    this.$video.srcObject = this.$stream
   }
 
   private applySizeRX() {
     autorun(() => {
-      if (!this.$isSizeNormalized) return
       if (!this.$track) return
 
       const { height, width } = this.$props
@@ -114,24 +175,16 @@ export class WebCam {
         width,
         height,
       })
-
-      console.re.log('size rx')
     })
   }
 
-  private normalizeSizeRX() {
-    const dispose = autorun(() => {
-      if (!this.$capabilities) return
-      if (!this.$track) return
+  private async normalizeSize() {
+    if (!this.$capabilities) return
+    if (!this.$track) return
 
-      this.$track.applyConstraints({
-        width: this.$capabilities.width,
-        height: this.$capabilities.height,
-      })
-
-      console.re.log('norm size rx')
-      this.$isSizeNormalized = true
-      dispose()
+    await this.$track.applyConstraints({
+      width: this.$capabilities.width,
+      height: this.$capabilities.height,
     })
   }
 }

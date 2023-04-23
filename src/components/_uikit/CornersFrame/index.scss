@@ -1,0 +1,29 @@
+.corners {
+  user-select: none;
+  pointer-events: none;
+
+  padding: 10px;
+  opacity: 0.7;
+
+  position: absolute;
+  inset: 0;
+
+  display: grid;
+  grid-template-columns: min-content min-content;
+  grid-template-rows: 1fr 1fr;
+  justify-content: space-between;
+
+  .rt {
+    transform: rotate(90deg);
+  }
+
+  .rb {
+    transform: rotate(-90deg);
+    align-self: flex-end;
+  }
+
+  .lb {
+    transform: rotate(180deg);
+    align-self: flex-end;
+  }
+}

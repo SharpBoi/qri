@@ -1,9 +1,8 @@
 import { WebCam } from '@/classes/WebCam'
 import { cn } from '@/util/cn'
 import { noop } from '@/util/noop'
-import { WithClass } from '@/util/props'
+import { ClassProp } from '@/util/props'
 import { observer } from 'mobx-react-lite'
-import QrScanner from 'qr-scanner'
 import {
   CSSProperties,
   forwardRef,
@@ -14,11 +13,11 @@ import {
 } from 'react'
 import style from './index.scss'
 
-export type CameraViewProps = WithClass & {
+export type CameraViewProps = ClassProp & {
   cam?: WebCam
   onCam?: (cam: WebCam) => void
 }
-export const CameraView = observer(
+export const WebCamView = observer(
   forwardRef<HTMLVideoElement | null, CameraViewProps>(
     ({ cam: camProp, onCam = noop, className }, fref) => {
       const ref = useRef<HTMLVideoElement>(null)
@@ -32,6 +31,8 @@ export const CameraView = observer(
         const video = ref.current
         if (!video) return
 
+        console.log(cam.$stream)
+
         video.srcObject = cam.$stream || null
 
         return () => {
@@ -43,24 +44,6 @@ export const CameraView = observer(
         fref,
         () => ref.current
       )
-
-      // TEST Handle qr
-      useEffect(() => {
-        const video = ref.current
-        if (!video) return
-
-        // const qr = new QrScanner(
-        //   video,
-        //   r => {
-        //     console.log(r)
-        //   },
-        //   {
-        //     // highlightScanRegion: true,
-        //     // highlightCodeOutline: true,
-        //   }
-        // )
-        // qr.start()
-      }, [])
 
       const flipStyle: CSSProperties = { transform: `scaleX(${cam.$flip})` }
 
