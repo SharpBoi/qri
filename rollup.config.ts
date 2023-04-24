@@ -23,8 +23,6 @@ const PORT = 10001
 const LOCAL_IP = os.networkInterfaces().en0?.[1].address
 const DIST = './public/dist'
 
-const BUNDLE_NAME = 'mainbundle'
-
 const isDev = process.env.NODE_ENV === 'development'
 const isProd = !isDev
 
@@ -37,16 +35,18 @@ export default defineConfig(async () => {
   }
 
   const config: RollupOptions = {
-    input: './src/main.tsx',
+    input: {
+      main: './src/main.tsx',
+      'sw/index': './src/service-worker/index.ts',
+    },
     output: {
       dir: DIST,
       format: 'esm',
-      entryFileNames: `${BUNDLE_NAME}-[hash].js`,
+      entryFileNames: `[name]-[hash].js`,
       sourcemap: true,
       exports: 'named',
       manualChunks: {
-        react: ['react'],
-        'react-dom': ['react-dom'],
+        'vendor/react': ['react', 'react-dom'],
       },
     },
     context: 'this',
@@ -92,21 +92,27 @@ export default defineConfig(async () => {
 
       htmlGenerator({
         template: 'src/index.html',
+        chunk: {
+          filter: ['main', 'sw/index'],
+          load: 'defer',
+        },
       }),
 
       manifesto(),
 
-      serve({
-        contentBase: DIST,
-        host: LOCAL_IP,
-        port: PORT,
-        https,
-      }),
-      livereload({
-        watch: DIST,
-        port: PORT,
-        https,
-      }),
+      isDev &&
+        serve({
+          contentBase: DIST,
+          host: LOCAL_IP,
+          port: PORT,
+          https,
+        }),
+      isDev &&
+        livereload({
+          watch: DIST,
+          port: PORT,
+          https,
+        }),
     ],
 
     watch: {

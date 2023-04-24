@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": "export NODE_ENV=development; rollup -c -w --bundleConfigAsCjs --configPlugin @rollup/plugin-typescript",
-    "build": "export NODE_ENV=production; rollup -c --bundleConfigAsCjs"
+    "rlp": "rollup --bundleConfigAsCjs --configPlugin @rollup/plugin-typescript",
+    "dev": "export NODE_ENV=development; npm run rlp -- -c -w",
+    "build": "export NODE_ENV=production; npm run rlp -- -c"
   },
   "author": "",
   "license": "ISC",
