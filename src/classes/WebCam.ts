@@ -113,6 +113,7 @@ export class WebCam {
     this.$props.height = height
   }
 
+  /** @deprecated */
   public async turnOnLight() {
     /////////////////
     // const media = await navigator.mediaDevices.getUserMedia({
