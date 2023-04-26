@@ -6,62 +6,75 @@ import * as util from 'util'
 type ChunkName = string & {}
 type ScriptLoad = 'defer' | 'async' | 'regular'
 
+function log(...params: any[]) {
+  console.log(
+    util.inspect(params, {
+      colors: true,
+      breakLength: 200,
+      depth: 1,
+      maxStringLength: 200,
+    })
+  )
+}
+
 type HtmlGeneratorProps = {
-  chunk?: {
-    filter?: ChunkName[] //| ((c: OutputChunk) => boolean)
-    load?: ScriptLoad | { [x: string]: ScriptLoad }
-    //| ((c: OutputChunk) => ScriptLoad)
+  chunks?: {
+    load?: ScriptLoad
+
+    entries?: {
+      [x: string]: {
+        load?: ScriptLoad
+        inline?: boolean
+      }
+    }
   }
   template?: string
 }
 
 export function htmlGenerator(props?: HtmlGeneratorProps): import('rollup').Plugin {
-  const { template = '', chunk } = props || {}
+  const { template = '', chunks } = props || {}
 
-  const chunkFilter = chunk?.filter
-  const chunkLoad = chunk?.load
+  const chunksEntries = chunks?.entries
   const templateName = path.basename(template)
 
   return {
     name: 'html-generator',
-    writeBundle(ops, bundle) {
+    generateBundle(ops, bundle) {
       console.log('Generating html ...')
 
       let html = fs.readFileSync(template).toString()
 
       const files = Object.values(bundle).flat()
 
-      const chunks = files.filter(c => c.type === 'chunk') as OutputChunk[]
-      const assets = files.filter(c => c.type === 'asset') as OutputAsset[]
+      const bundleChunks = files.filter(c => c.type === 'chunk') as OutputChunk[]
+      const bundleAssets = files.filter(c => c.type === 'asset') as OutputAsset[]
 
       html = html.replace(
         '${scripts}',
-        chunks
-          .filter(c => (chunkFilter ? chunkFilter.includes(c.name) : true))
+        bundleChunks
+          .filter(c =>
+            chunksEntries ? Object.keys(chunksEntries).includes(c.name) : true
+          )
           .map(c => {
-            let load = typeof chunkLoad === 'string' ? chunkLoad : chunkLoad?.[c.name]
+            const entry = chunksEntries?.[c.name]
 
-            const attr = load === 'regular' ? '' : load || ''
+            if (entry?.inline) {
+              delete bundle[c.fileName]
 
-            return `<script ${attr} type="module" src="${c.fileName}"></script>`
+              return `<script type="module" data-name="${c.name}" data-filename="${c.fileName}">${c.code}</script>`
+            }
+
+            const load = chunks?.load || entry?.load || ''
+            const attr = load === 'regular' ? '' : load
+
+            return `<script ${attr} ${ops.format === 'es' ? 'type="module"' : ''} src="${
+              c.fileName
+            }"></script>`
           })
           .join('\n')
       )
 
-      // chunks
-      //   .filter(c => c.type === 'chunk')
-      //   .forEach(c => {
-      //     console.log(
-      //       util.inspect(c, {
-      //         colors: true,
-      //         breakLength: 200,
-      //         depth: 1,
-      //         maxStringLength: 200,
-      //       })
-      //     )
-      //   })
-
-      const styles = assets.filter(c => c.fileName.endsWith('.css'))
+      const styles = bundleAssets.filter(c => c.fileName.endsWith('.css'))
       html = html.replace(
         '${styles}',
         styles.map(s => `<link rel="stylesheet" href="${s.fileName}" />`).join('\n')

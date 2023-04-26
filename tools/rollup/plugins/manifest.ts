@@ -11,10 +11,14 @@ export function manifesto(props?: ManifestoProps): Plugin {
 
   return {
     name: 'my-manifest',
-    async writeBundle(ops, b) {
-      const manifest = {
-        files: Object.keys(b),
+    async writeBundle(ops, bundle) {
+      const manifest: any = {
+        files: Object.keys(bundle),
       }
+
+      Object.values(bundle).forEach(b => {
+        if (b.name) manifest[b.name] = b.fileName
+      })
 
       await fs.writeFile(`${ops.dir}/${fileName}`, JSON.stringify(manifest, null, 2))
     },

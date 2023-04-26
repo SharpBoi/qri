@@ -8,6 +8,8 @@
     "target": "es5",
     "module": "esnext",
     "jsx": "react-jsx",
+    "lib": ["WebWorker", "DOM"],
+    
     "sourceMap": true,
     // "outDir": "dist",
     "strict": true,

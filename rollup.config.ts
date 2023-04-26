@@ -1,5 +1,4 @@
 import { RollupOptions, defineConfig } from 'rollup'
-import html from '@rollup/plugin-html'
 import typescript from '@rollup/plugin-typescript'
 import del from 'rollup-plugin-delete'
 import { babel } from '@rollup/plugin-babel'
@@ -37,7 +36,8 @@ export default defineConfig(async () => {
   const config: RollupOptions = {
     input: {
       main: './src/main.tsx',
-      'sw/index': './src/service-worker/index.ts',
+      'sw-sw': './src/service-worker/sw.ts',
+      'sw-loader': './src/service-worker/loader.ts',
     },
     output: {
       dir: DIST,
@@ -47,6 +47,7 @@ export default defineConfig(async () => {
       exports: 'named',
       manualChunks: {
         'vendor/react': ['react', 'react-dom'],
+        'vendor/mobx': ['mobx'],
       },
     },
     context: 'this',
@@ -63,16 +64,27 @@ export default defineConfig(async () => {
         'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       }),
       //@ts-ignore
-      external(),
-      nodeResolve({ extensions: ['.ts', '.tsx'] }),
+      external({}),
+      nodeResolve({
+        browser: true,
+        preferBuiltins: false,
+        extensions: ['.ts', '.tsx'],
+      }),
       del({ targets: `${DIST}/*` }),
+
       babel({
         exclude: 'node_modules/**',
-        extensions: ['.html'],
+        extensions: ['.ts', '.tsx'],
         presets: [['@babel/preset-react', { runtime: 'automatic', loose: false }]],
         plugins: [['@babel/plugin-proposal-decorators', { legacy: true }]],
       }),
-      typescript(),
+      postcss({
+        extract: true,
+        modules: true,
+        minimize: isProd,
+      }),
+      svgr({}),
+      typescript({}),
       commonjs({}),
 
       isProd &&
@@ -82,19 +94,13 @@ export default defineConfig(async () => {
           },
         }),
 
-      svgr({}),
-
-      postcss({
-        extract: true,
-        modules: true,
-        minimize: isProd,
-      }),
-
       htmlGenerator({
         template: 'src/index.html',
-        chunk: {
-          filter: ['main', 'sw/index'],
+        chunks: {
           load: 'defer',
+          entries: {
+            'sw-loader': { inline: true },
+          },
         },
       }),
 
@@ -103,9 +109,9 @@ export default defineConfig(async () => {
       isDev &&
         serve({
           contentBase: DIST,
-          host: LOCAL_IP,
+          // host: LOCAL_IP,
           port: PORT,
-          https,
+          // https,
         }),
       isDev &&
         livereload({
