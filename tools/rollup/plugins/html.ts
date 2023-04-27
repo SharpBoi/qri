@@ -80,7 +80,11 @@ export function htmlGenerator(props?: HtmlGeneratorProps): import('rollup').Plug
         styles.map(s => `<link rel="stylesheet" href="${s.fileName}" />`).join('\n')
       )
 
-      fs.writeFileSync(`${ops.dir}/${templateName}`, html)
+      this.emitFile({
+        type: 'asset',
+        fileName: 'index.html',
+        source: html,
+      })
     },
     buildStart() {
       this.addWatchFile(template)
