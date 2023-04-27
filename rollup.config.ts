@@ -1,42 +1,89 @@
 import { RollupOptions, defineConfig } from 'rollup'
-import typescript from '@rollup/plugin-typescript'
-import del from 'rollup-plugin-delete'
+import tsPlugin from '@rollup/plugin-typescript'
 import { babel } from '@rollup/plugin-babel'
-import commonjs from '@rollup/plugin-commonjs'
+import cjsPlugin from '@rollup/plugin-commonjs'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { terser } from 'rollup-plugin-terser'
 import serve from 'rollup-plugin-serve'
 import livereload from 'rollup-plugin-livereload'
-import external from 'rollup-plugin-peer-deps-external'
-import replace from '@rollup/plugin-replace'
+import externalPlugin from 'rollup-plugin-peer-deps-external'
+import replacePlugin from '@rollup/plugin-replace'
 import * as os from 'os'
 import * as fs from 'fs'
 import postcss from 'rollup-plugin-postcss'
 import svgr from '@svgr/rollup'
-import alias from '@rollup/plugin-alias'
+import aliasPlugin from '@rollup/plugin-alias'
 import path from 'path'
 import { manifesto } from './tools/rollup/plugins/manifest'
 import { htmlGenerator } from './tools/rollup/plugins/html'
+import { smartDelete } from './tools/rollup/plugins/smart-delete'
 
 const PORT = 10001
 const LOCAL_IP = os.networkInterfaces().en0?.[1].address
 const DIST = './public/dist'
 
+const https = {
+  key: fs.readFileSync('./tools/https/key.pem'),
+  cert: fs.readFileSync('./tools/https/cert.pem'),
+}
+
 const isDev = process.env.NODE_ENV === 'development'
 const isProd = !isDev
+
+fs.rmSync(DIST, { force: true, recursive: true })
+
+const alias = aliasPlugin({
+  entries: {
+    '@': path.resolve(__dirname, 'src'),
+  },
+})
+
+const replace = replacePlugin({
+  preventAssignment: true,
+  'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+})
+
+const ts = tsPlugin({})
+const cjs = cjsPlugin({})
 
 export default defineConfig(async () => {
   console.warn(`!!! you can also run at https://${LOCAL_IP}:${PORT}`)
 
-  const https = {
-    key: fs.readFileSync('./tools/https/key.pem'),
-    cert: fs.readFileSync('./tools/https/cert.pem'),
+  const swConfig: RollupOptions = {
+    input: {
+      'sw-sw': './src/service-worker/sw.ts',
+    },
+    output: {
+      dir: DIST,
+      format: 'cjs',
+      entryFileNames: `[name]-[hash].js`,
+      sourcemap: true,
+    },
+
+    plugins: [
+      alias,
+
+      replace,
+
+      smartDelete({ dir: DIST }),
+
+      ts,
+      cjs,
+
+      isProd &&
+        terser({
+          format: {
+            comments: false,
+          },
+        }),
+
+      manifesto({ fileName: 'manifest.sw.json' }),
+    ],
   }
 
-  const config: RollupOptions = {
+  const appConfig: RollupOptions = {
     input: {
       main: './src/main.tsx',
-      'sw-sw': './src/service-worker/sw.ts',
       'sw-loader': './src/service-worker/loader.ts',
     },
     output: {
@@ -53,24 +100,18 @@ export default defineConfig(async () => {
     context: 'this',
 
     plugins: [
-      alias({
-        entries: {
-          '@': path.resolve(__dirname, 'src'),
-        },
-      }),
+      alias,
 
-      replace({
-        preventAssignment: true,
-        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-      }),
+      replace,
+
       //@ts-ignore
-      external({}),
+      externalPlugin({}),
       nodeResolve({
         browser: true,
         preferBuiltins: false,
         extensions: ['.ts', '.tsx'],
       }),
-      del({ targets: `${DIST}/*` }),
+      smartDelete({ dir: `${DIST}` }),
 
       babel({
         exclude: 'node_modules/**',
@@ -78,14 +119,17 @@ export default defineConfig(async () => {
         presets: [['@babel/preset-react', { runtime: 'automatic', loose: false }]],
         plugins: [['@babel/plugin-proposal-decorators', { legacy: true }]],
       }),
+
       postcss({
         extract: true,
         modules: true,
         minimize: isProd,
       }),
+
       svgr({}),
-      typescript({}),
-      commonjs({}),
+
+      ts,
+      cjs,
 
       isProd &&
         terser({
@@ -104,7 +148,7 @@ export default defineConfig(async () => {
         },
       }),
 
-      manifesto(),
+      manifesto({ fileName: 'manifest.app.json' }),
 
       isDev &&
         serve({
@@ -126,5 +170,5 @@ export default defineConfig(async () => {
     },
   }
 
-  return config
+  return [swConfig, appConfig]
 })

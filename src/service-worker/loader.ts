@@ -1,18 +1,27 @@
 export {}
 
-const MANIFEST_URL = 'manifest.json'
-
 const sw = navigator.serviceWorker
 
-function loadMainApp(manifest: any) {
-  const script = document.createElement('script')
-  script.src = manifest.main
-  script.type = 'module'
-  script.onload = () => {
-    document.body.querySelector('#loader')?.remove()
-  }
+async function loadMainApp(appUrl: string) {
+  return new Promise<void>(res => {
+    const script = document.createElement('script')
+    script.src = appUrl
+    script.type = 'module'
+    script.onload = () => {
+      res()
+    }
 
-  document.body.appendChild(script)
+    document.body.appendChild(script)
+  })
+}
+
+function showLoader() {
+  const loader = document.body.querySelector('#loader') as HTMLDivElement
+  if (!loader) return
+  loader.style.display = ''
+}
+function hideLoader() {
+  document.body.querySelector('#loader')?.remove()
 }
 
 function hasSW() {
@@ -38,22 +47,39 @@ function register(url: string) {
   })
 }
 
-function fetchManifest() {
-  return fetch(MANIFEST_URL)
+function appManifest() {
+  return fetch('manifest.app.json')
+    .then(res => res.json())
+    .then(json => json as Record<string, string>)
+}
+function swManifest() {
+  return fetch('manifest.sw.json')
     .then(res => res.json())
     .then(json => json as Record<string, string>)
 }
 
 async function main() {
-  const manifest = await fetchManifest()
-
   const isRegistered = await hasSW()
 
   if (!isRegistered) {
-    await register(manifest['sw-sw'])
+    console.log('sw install')
+
+    showLoader()
+
+    const swMan = await swManifest()
+
+    await register(swMan['sw-sw'])
+    window.location.reload()
+    return
   }
 
-  await loadMainApp(manifest)
+  console.log('sw SKIP install')
+
+  const appMan = await appManifest()
+
+  await loadMainApp(appMan['main'])
+
+  hideLoader()
 }
 
 document.addEventListener('DOMContentLoaded', () => {

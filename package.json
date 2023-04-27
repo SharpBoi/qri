@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "rlp": "rollup --bundleConfigAsCjs --configPlugin @rollup/plugin-typescript",
-    "dev": "export NODE_ENV=development; npm run rlp -- -c -w",
+    "start": "export NODE_ENV=development; npm run rlp -- -c -w",
     "build": "export NODE_ENV=production; npm run rlp -- -c"
   },
   "author": "",
