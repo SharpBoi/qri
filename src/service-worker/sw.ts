@@ -1,80 +1,57 @@
+import {
+  CACHE_404,
+  cachePut,
+  cleanCache,
+  fromCache,
+  open,
+  postMessage,
+  respondCacheOnly,
+  swMsg,
+} from './sw-util'
+import { SWMessage, SWUpdateResult } from './types'
+
 export {}
 
-console.log('hllo SW    ')
+console.log('hllo SW 12')
 
-const CACHE = 'cache-v1'
+const APP_MANIFEST_URL = 'manifest.app.json'
 
 const sw = self as any as ServiceWorkerGlobalScope
 
-const emptyRes = new Response(undefined, { status: 400 })
+async function fillCache() {
+  await cleanCache()
 
-const open = () => sw.caches.open(CACHE)
+  // TODO improve exception
+  const res = await fetch(APP_MANIFEST_URL)
+  await cachePut(APP_MANIFEST_URL, res.clone())
+  await cachePut('/', await fetch('index.html'))
 
-async function cachePut(req: RequestInfo | URL, res: Response) {
-  const cache = await open()
-  return cache.put(req, res)
+  const appMan = await res.json()
+
+  for (const file of appMan.files) {
+    await cachePut(file, await fetch(file))
+  }
 }
 
-async function fromNet(input: RequestInfo | URL, saveCache = false) {
-  const res = await fetch(input)
+async function checkAppNeedUpdate() {
+  try {
+    const appMan = await fetch(APP_MANIFEST_URL).then(res => res.json())
 
-  if (saveCache) cachePut(input, res.clone())
+    const cache = await open()
 
-  return res
-}
-async function fromCache(input: RequestInfo | URL) {
-  const cache = await open()
-  const res = await cache.match(input)
+    for (const file of appMan.files) {
+      const res = await cache.match(file)
 
-  return res
-}
+      if (!res) return true
+    }
+  } catch {}
 
-async function netFirst(e: FetchEvent) {
-  e.respondWith(
-    (async () => {
-      try {
-        const res = await fromNet(e.request, true)
-        return res
-      } catch {
-        const res = await fromCache(e.request)
-        return res || emptyRes.clone()
-      }
-    })()
-  )
-}
-
-async function cacheFirst(e: FetchEvent) {
-  e.respondWith(
-    (async () => {
-      try {
-        return (await fromCache(e.request)) || (await fromNet(e.request, true))
-      } catch {
-        return emptyRes.clone()
-      }
-    })()
-  )
-}
-
-async function handleIndexHtml(e: FetchEvent) {
-  const path = new URL(e.request.url).pathname
-
-  const isIndex = path === '' || path === '/' || path === '/index.html'
-  if (!isIndex) return
-
-  await netFirst(e)
-}
-
-async function handleManifest(e: FetchEvent) {
-  const path = new URL(e.request.url).pathname
-
-  const isManifest = path.startsWith('/manifest') && path.endsWith('.json')
-  if (!isManifest) return
-
-  await netFirst(e)
+  return false
 }
 
 sw.addEventListener('install', e => {
   console.log('sw.ts install', e)
+
   return sw.skipWaiting()
 })
 
@@ -87,9 +64,23 @@ sw.addEventListener('fetch', async e => {
   const req = e.request
   if (!req.url.startsWith('http')) return
 
-  await handleIndexHtml(e)
+  const url = new URL(req.url)
+  const bypassCache = url.searchParams.has('sw-bc')
 
-  await handleManifest(e)
+  if (bypassCache) return e.respondWith(fetch(req))
 
-  await cacheFirst(e)
+  respondCacheOnly(e)
+})
+
+swMsg(sw, 'check-update', async msg => {
+  console.log('MSG from client', msg)
+
+  const need = await checkAppNeedUpdate()
+
+  if (need) await fillCache()
+
+  postMessage(<SWUpdateResult>{
+    type: 'update-result',
+    result: need ? 'updated' : 'no',
+  })
 })

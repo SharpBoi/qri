@@ -1,3 +1,6 @@
+import { swMsg } from './sw-util'
+import { SWCheckUpdate, SWMessage } from './types'
+
 export {}
 
 const sw = navigator.serviceWorker
@@ -63,13 +66,13 @@ function register(url: string) {
   })
 }
 
-function appManifest(noCache?: boolean) {
-  return pull(`manifest.app.json`, noCache)
+function appManifest() {
+  return pull(`manifest.app.json`)
     .then(res => res.json())
     .then(json => json as Record<string, any>)
 }
-function swManifest(noCache?: boolean) {
-  return pull('manifest.sw.json', noCache)
+function swManifest() {
+  return pull('manifest.sw.json', true)
     .then(res => res.json())
     .then(json => json as Record<string, any>)
 }
@@ -79,7 +82,7 @@ async function checkSWneedUpdate() {
     const currentSW = await getCurrentSW()
     if (!currentSW) return false
 
-    const swMan = await swManifest(true)
+    const swMan = await swManifest()
 
     const currentSWfileName = new URL(currentSW.scriptURL).pathname.split('/').at(-1)
 
@@ -92,6 +95,8 @@ async function checkSWneedUpdate() {
 }
 
 async function main() {
+  showLoader()
+
   const swNeedUpdate = await checkSWneedUpdate()
   console.log('SW UPD', swNeedUpdate)
   if (swNeedUpdate) {
@@ -105,23 +110,30 @@ async function main() {
     if (!isRegistered) {
       console.log('sw install')
 
-      showLoader()
-
-      const swMan = await swManifest(true)
+      const swMan = await swManifest()
 
       await register(swMan['sw-sw'])
-      window.location.reload()
-      return
+    } else {
+      console.log('sw SKIP install')
     }
   } catch {}
 
-  console.log('sw SKIP install')
+  swMsg(sw, 'update-result', async (msg, dispose) => {
+    dispose()
 
-  const appMan = await appManifest()
+    if (msg.result === 'updated') {
+      window.location.reload()
+    } else if (msg.result === 'no') {
+      const man = await appManifest()
 
-  await loadMainApp(appMan['main'])
+      await loadMainApp(man['main'])
+      hideLoader()
+    }
+  })
 
-  hideLoader()
+  await getCurrentSW().then(instance => {
+    instance?.postMessage(<SWCheckUpdate>{ type: 'check-update' })
+  })
 }
 
 document.addEventListener('DOMContentLoaded', () => {

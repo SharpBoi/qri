@@ -57,7 +57,7 @@ export default defineConfig(async () => {
       dir: DIST,
       format: 'cjs',
       entryFileNames: `[name]-[hash].js`,
-      sourcemap: true,
+      // sourcemap: true,
     },
 
     plugins: [
@@ -90,7 +90,7 @@ export default defineConfig(async () => {
       dir: DIST,
       format: 'esm',
       entryFileNames: `[name]-[hash].js`,
-      sourcemap: true,
+      // sourcemap: true,
       exports: 'named',
       manualChunks: {
         'vendor/react': ['react', 'react-dom'],
