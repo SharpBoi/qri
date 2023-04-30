@@ -156,6 +156,7 @@ export default defineConfig(async () => {
           // host: LOCAL_IP,
           port: PORT,
           // https,
+          historyApiFallback: true,
         }),
       isDev &&
         livereload({

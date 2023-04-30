@@ -1,17 +1,18 @@
 import { WebCam } from '@/classes/WebCam'
 import { observer } from 'mobx-react-lite'
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useContext, useEffect, useRef, useState } from 'react'
 import { WebCamView } from '../WebCamView/WebCamView'
 import style from './index.scss'
 import { $orientation, Orientation } from '@/store/orientation'
 import { cn } from '@/util/cn'
 import QrScanner from 'qr-scanner'
-import { Await } from '../Await'
 import { Button } from '../_uikit/Button'
 import { CornersFrame } from '../_uikit/CornersFrame'
-import { SelectList } from '../_uikit/SelectList'
-import WebcamSVG from '@/assets/webcam.svg'
 import { WebcamDropdownList } from '../_dropdowns/WebcamDropdownList'
+import { openFileDialog } from '@/util/file-dialog'
+import FolderSVG from '@/assets/folder.svg'
+import { useNavigate } from 'react-router'
+import { PATHS } from '@/routing/paths'
 
 const cam = new WebCam()
 
@@ -21,9 +22,25 @@ export type CodeScanViewProps = {
 export const CodeScanView = observer(({ autoPlay = false }: CodeScanViewProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
 
+  const nav = useNavigate()
+
   useEffect(() => {
-    // if (autoPlay) cam.startDefault()
+    if (autoPlay) cam.startDefault()
   }, [cam])
+
+  function handleCamSelect(id: string) {
+    cam.stop()
+    cam.start(id)
+  }
+
+  async function handleFiles() {
+    const [file] = await openFileDialog()
+    if (!file) return
+
+    nav(PATHS.imageScan, {
+      state: file,
+    })
+  }
 
   const flip = $orientation.$value === Orientation.landscape
 
@@ -47,11 +64,6 @@ export const CodeScanView = observer(({ autoPlay = false }: CodeScanViewProps) =
   //   })()
   // }, [cam.$stream])
 
-  function handleCamSelect(id: string) {
-    cam.stop()
-    cam.start(id)
-  }
-
   return (
     <div className={style.code_scan_box}>
       <div className={style.video_box}>
@@ -70,7 +82,9 @@ export const CodeScanView = observer(({ autoPlay = false }: CodeScanViewProps) =
         <Button onClick={() => cam.turnOnLight()} className={style.flash}>
           Light
         </Button>
-        <Button className={style.file}>F</Button>
+        <Button className={style.file} onClick={handleFiles}>
+          <FolderSVG />
+        </Button>
         <WebcamDropdownList
           selectId={cam.$capabilities?.deviceId}
           onSelect={handleCamSelect}

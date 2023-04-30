@@ -1,22 +1,27 @@
 import { useEffect, useRef } from 'react'
 import { observer } from 'mobx-react-lite'
 import { CodeScanView } from './components/CodeScanView/CodeScanView'
-import { configure } from 'mobx'
-
-configure({
-  enforceActions: 'never',
-})
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { PATHS } from './routing/paths'
+import { ImageScan } from './components/ImageScan/ImageScan'
+import { ScanResult } from './components/ScanResult/ScanResult'
 
 screen.orientation.lock('portrait')
-
-console.re ||= console
 
 export const App = observer(() => {
   useEffect(() => {}, [])
 
   return (
     <>
-      <CodeScanView autoPlay />
+      <BrowserRouter>
+        <Routes>
+          <Route path={PATHS.root} element={<CodeScanView autoPlay />} />
+
+          <Route path={PATHS.imageScan} element={<ImageScan />} />
+
+          <Route path={PATHS.scanResult} element={<ScanResult />} />
+        </Routes>
+      </BrowserRouter>
     </>
   )
 })

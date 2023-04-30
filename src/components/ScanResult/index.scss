@@ -1,0 +1,45 @@
+.view {
+  height: 100%;
+}
+
+.img_box {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  img {
+    width: 100%;
+  }
+}
+
+.footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  padding: 10px;
+
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  gap: 20px;
+
+  box-sizing: border-box;
+  background-color: white;
+}
+
+.actions {
+  width: 100%;
+  padding: 0 10px;
+
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 10px;
+
+  & > * {
+    width: 100%;
+    height: 80px;
+  }
+}

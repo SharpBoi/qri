@@ -136,6 +136,9 @@ async function main() {
   })
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  main()
+document.addEventListener('DOMContentLoaded', async () => {
+  // main()
+
+  const man = await appManifest()
+  loadMainApp(man['main'])
 })
