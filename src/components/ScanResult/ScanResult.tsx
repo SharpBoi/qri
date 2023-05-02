@@ -1,13 +1,11 @@
-import { Navigate, useLocation, useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { Button } from '../_uikit/Button'
 import style from './index.scss'
 import { ImgScanResult } from '@/types/img-scan-result'
 import { RichText } from '../_uikit/RichText'
-import BrowserSVG from '@/assets/browser.svg'
-import ShareSVG from '@/assets/share.svg'
-import CopySVG from '@/assets/copy.svg'
-import { copyToClipboard } from '@/util/clipboard'
-import { openLinkOrText } from '@/util/link'
+import { BrowserButton } from '../_buttons/BrowserButton'
+import { ClipboardButton } from '../_buttons/ClipboardButton'
+import { ShareButton } from '../_buttons/ShareButton'
 
 export function ScanResult() {
   const loc = useLocation()
@@ -24,17 +22,9 @@ export function ScanResult() {
         <RichText maxHeight="75px" wide value={result.data}></RichText>
 
         <div className={style.actions}>
-          {navigator.share && (
-            <Button onClick={() => navigator.share({ text: result.data })}>
-              <ShareSVG />
-            </Button>
-          )}
-          <Button onClick={() => openLinkOrText(result.data)}>
-            <BrowserSVG />
-          </Button>
-          <Button onClick={() => copyToClipboard(result.data)}>
-            <CopySVG />
-          </Button>
+          <ShareButton data={result.data} />
+          <BrowserButton data={result.data} />
+          <ClipboardButton data={result.data} />
         </div>
         <Button wide onClick={() => nav(-1)}>
           Back

@@ -13,8 +13,14 @@ import { openFileDialog } from '@/util/file-dialog'
 import FolderSVG from '@/assets/folder.svg'
 import { useNavigate } from 'react-router'
 import { PATHS } from '@/routing/paths'
+import { Link } from 'react-router-dom'
 
 const cam = new WebCam()
+
+document.addEventListener('focus', async () => {
+  cam.stop()
+  await cam.startDefault()
+})
 
 export type CodeScanViewProps = {
   autoPlay?: boolean
@@ -45,24 +51,32 @@ export const CodeScanView = observer(({ autoPlay = false }: CodeScanViewProps) =
   const flip = $orientation.$value === Orientation.landscape
 
   // TEST Handle qr
-  // useEffect(() => {
-  //   ;(async () => {
-  //     if (!cam.$stream) return
-  //     if (!videoRef.current) return
+  useEffect(() => {
+    ;(async () => {
+      if (!cam.$stream) return
+      if (!videoRef.current) return
 
-  //     const qr = new QrScanner(
-  //       videoRef.current,
-  //       r => {
-  //         console.log(r)
-  //       },
-  //       {
-  //         // highlightScanRegion: true,
-  //         // highlightCodeOutline: true,
-  //       }
-  //     )
-  //     await qr.start()
-  //   })()
-  // }, [cam.$stream])
+      const video = document.createElement('video')
+      video.srcObject = cam.$stream
+      video.play()
+
+      const qr = new QrScanner(
+        video,
+        r => {
+          video.srcObject = null
+
+          qr.stop()
+          qr.destroy()
+          console.log(r)
+        },
+        {
+          // highlightScanRegion: true,
+          // highlightCodeOutline: true,
+        }
+      )
+      await qr.start()
+    })()
+  }, [cam.$stream])
 
   return (
     <div className={style.code_scan_box}>
@@ -90,6 +104,7 @@ export const CodeScanView = observer(({ autoPlay = false }: CodeScanViewProps) =
           onSelect={handleCamSelect}
         />
         <Button className={style.settings}>S</Button>
+        <Link to={PATHS.history} className={style.settings}></Link>
       </div>
     </div>
   )

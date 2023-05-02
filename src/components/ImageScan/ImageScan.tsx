@@ -6,6 +6,7 @@ import { Button } from '../_uikit/Button'
 import style from './index.scss'
 import { PATHS } from '@/routing/paths'
 import { ImgScanResult } from '@/types/img-scan-result'
+import { $history } from '@/store/history'
 
 export function ImageScan() {
   const loc = useLocation()
@@ -26,17 +27,22 @@ export function ImageScan() {
 
       setUrl(url)
 
-      const scan = await QrScanner.scanImage(file, { returnDetailedScanResult: true })
+      try {
+        const scan = await QrScanner.scanImage(file, { returnDetailedScanResult: true })
+        setScan(scan)
 
-      setScan(scan)
+        $history.add(scan)
 
-      nav(PATHS.scanResult, {
-        replace: true,
-        state: {
-          ...scan,
-          imgUrl: url,
-        } as ImgScanResult,
-      })
+        nav(PATHS.scanResult, {
+          replace: true,
+          state: {
+            ...scan,
+            imgUrl: url,
+          } as ImgScanResult,
+        })
+      } catch {
+        setScan('err')
+      }
     })()
   }, [file])
 

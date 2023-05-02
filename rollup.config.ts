@@ -155,7 +155,7 @@ export default defineConfig(async () => {
           contentBase: DIST,
           // host: LOCAL_IP,
           port: PORT,
-          // https,
+          https,
           historyApiFallback: true,
         }),
       isDev &&
