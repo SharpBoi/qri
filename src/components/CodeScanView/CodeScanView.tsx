@@ -5,37 +5,71 @@ import { WebCamView } from '../WebCamView/WebCamView'
 import style from './index.scss'
 import { $orientation, Orientation } from '@/store/orientation'
 import { cn } from '@/util/cn'
-import QrScanner from 'qr-scanner'
 import { Button } from '../_uikit/Button'
 import { CornersFrame } from '../_uikit/CornersFrame'
 import { WebcamDropdownList } from '../_dropdowns/WebcamDropdownList'
 import { openFileDialog } from '@/util/file-dialog'
 import FolderSVG from '@/assets/folder.svg'
+import HistorySVG from '@/assets/history.svg'
 import { useNavigate } from 'react-router'
 import { PATHS } from '@/routing/paths'
 import { Link } from 'react-router-dom'
+import { BarcodeScan } from '@/classes/BarcodeScan'
+import { historyStore } from '@/store/history'
+import { settingsStore } from '@/store/settings'
+import { useMount, useUnmount } from '@/hooks/useMount'
 
-const cam = new WebCam()
-
-document.addEventListener('focus', async () => {
-  cam.stop()
-  await cam.startDefault()
-})
-
-export type CodeScanViewProps = {
-  autoPlay?: boolean
-}
-export const CodeScanView = observer(({ autoPlay = false }: CodeScanViewProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null)
-
+export type CodeScanViewProps = {}
+export const CodeScanView = observer(({}: CodeScanViewProps) => {
   const nav = useNavigate()
 
+  const { $settings } = settingsStore
+
+  const [cam] = useState(() => new WebCam())
+  const [scan] = useState(() => new BarcodeScan())
+
+  const flip = $orientation.$value === Orientation.landscape
+
+  // Start cam
+  useMount(() => {
+    cam.stop()
+
+    if ($settings.camId) cam.start($settings.camId)
+    else cam.startDefault()
+  })
+
+  // Start scan
   useEffect(() => {
-    if (autoPlay) cam.startDefault()
-  }, [cam])
+    if (!cam.$stream) return
+
+    scan.stop()
+
+    scan.start(cam.$stream)
+  }, [scan, cam.$stream])
+
+  // Scan detected
+  useEffect(() => {
+    if (!scan.$result) return
+
+    scan.stop()
+
+    historyStore.add(scan.$result)
+
+    nav(PATHS.scanResult, {
+      state: scan.$result,
+    })
+  }, [scan.$result])
+
+  useUnmount(() => {
+    scan.stop()
+    cam.stop()
+  })
 
   function handleCamSelect(id: string) {
     cam.stop()
+
+    settingsStore.set({ camId: id })
+
     cam.start(id)
   }
 
@@ -48,46 +82,10 @@ export const CodeScanView = observer(({ autoPlay = false }: CodeScanViewProps) =
     })
   }
 
-  const flip = $orientation.$value === Orientation.landscape
-
-  // TEST Handle qr
-  useEffect(() => {
-    ;(async () => {
-      if (!cam.$stream) return
-      if (!videoRef.current) return
-
-      const video = document.createElement('video')
-      video.srcObject = cam.$stream
-      video.play()
-
-      const qr = new QrScanner(
-        video,
-        r => {
-          video.srcObject = null
-
-          qr.stop()
-          qr.destroy()
-          console.log(r)
-        },
-        {
-          // highlightScanRegion: true,
-          // highlightCodeOutline: true,
-        }
-      )
-      await qr.start()
-    })()
-  }, [cam.$stream])
-
   return (
     <div className={style.code_scan_box}>
       <div className={style.video_box}>
-        {cam && (
-          <WebCamView
-            ref={videoRef}
-            className={cn(style.video, flip && style.flip)}
-            cam={cam}
-          />
-        )}
+        {cam && <WebCamView className={cn(style.video, flip && style.flip)} cam={cam} />}
       </div>
 
       <CornersFrame />
@@ -103,7 +101,9 @@ export const CodeScanView = observer(({ autoPlay = false }: CodeScanViewProps) =
           selectId={cam.$capabilities?.deviceId}
           onSelect={handleCamSelect}
         />
-        <Button className={style.settings}>S</Button>
+        <Button className={style.settings}>
+          <HistorySVG />
+        </Button>
         <Link to={PATHS.history} className={style.settings}></Link>
       </div>
     </div>

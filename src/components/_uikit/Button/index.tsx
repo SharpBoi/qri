@@ -3,9 +3,10 @@ import style from './index.scss'
 import { cn } from '@/util/cn'
 import { ToggleProp } from '@/util/props'
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> &
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
   ToggleProp & {
     wide?: boolean
+    allowPropogation?: boolean
   }
 
 export function Button({
@@ -18,12 +19,15 @@ export function Button({
   onClick,
 
   wide,
+  allowPropogation,
 
   ...rest
-}: PropsWithChildren<Props>) {
-  function handleClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+}: PropsWithChildren<ButtonProps>) {
+  function handleClick(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    if (!allowPropogation) e.stopPropagation()
+
     onToggle?.(!toggle)
-    onClick?.(event)
+    onClick?.(e)
   }
 
   return (

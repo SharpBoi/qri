@@ -1,7 +1,7 @@
-import { Button } from '@/components/_uikit/Button'
+import { Button, ButtonProps } from '@/components/_uikit/Button'
 import ShareSVG from '@/assets/share.svg'
 
-type Props = {
+type Props = ButtonProps & {
   data: string
   keepIfAPIrestricted?: boolean
 }

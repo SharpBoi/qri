@@ -6,9 +6,10 @@ import { Button } from '../_uikit/Button'
 import style from './index.scss'
 import { PATHS } from '@/routing/paths'
 import { ImgScanResult } from '@/types/img-scan-result'
-import { $history } from '@/store/history'
+import { historyStore } from '@/store/history'
+import { observer } from 'mobx-react-lite'
 
-export function ImageScan() {
+export const ImageScan = observer(() => {
   const loc = useLocation()
   const nav = useNavigate()
 
@@ -31,7 +32,7 @@ export function ImageScan() {
         const scan = await QrScanner.scanImage(file, { returnDetailedScanResult: true })
         setScan(scan)
 
-        $history.add(scan)
+        historyStore.add(scan)
 
         nav(PATHS.scanResult, {
           replace: true,
@@ -61,4 +62,4 @@ export function ImageScan() {
       </footer>
     </div>
   )
-}
+})

@@ -2,7 +2,7 @@ import { noop } from '@/util/noop'
 import { useCallback, useRef } from 'react'
 
 export function useFunc<F extends typeof noop>(f: F) {
-  const ref = useRef<F>(f)
+  const ref = useRef(f)
   ref.current = f
 
   const func = useCallback(

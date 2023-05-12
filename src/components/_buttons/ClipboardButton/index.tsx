@@ -1,9 +1,9 @@
-import { Button } from '@/components/_uikit/Button'
+import { Button, ButtonProps } from '@/components/_uikit/Button'
 import { openLinkOrText } from '@/util/link'
 import CopySVG from '@/assets/copy.svg'
 import { copyToClipboard } from '@/util/clipboard'
 
-type Props = {
+type Props = ButtonProps & {
   data: string
 }
 

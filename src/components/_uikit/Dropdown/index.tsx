@@ -19,7 +19,7 @@ export function Dropdown({
   onToggle,
   toggle,
 }: PropsWithChildren & DropdownProps) {
-  const [opened, setOpen] = usePriorityState<boolean>(false, toggle, onToggle)
+  const [opened, setOpen] = usePriorityState(false, toggle, onToggle)
 
   return (
     <Button

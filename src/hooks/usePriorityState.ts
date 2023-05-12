@@ -9,8 +9,6 @@ export function usePriorityState<T>(
   const [state, setState] = useState(init)
 
   const setter = useFunc((value: T) => {
-    console.log(value, prioprity)
-
     onChange?.(value)
 
     if (prioprity === undefined) {

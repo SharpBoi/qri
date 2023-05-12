@@ -1,5 +1,6 @@
+import { readLocalStorage, writeLocalStorage } from '@/util/local-storage'
 import { action, makeObservable, observable } from 'mobx'
-import QrScanner from 'qr-scanner'
+import type QrScanner from 'qr-scanner'
 
 const HISTORY_KEY = 'history'
 
@@ -18,7 +19,7 @@ class HistoryStore {
   constructor() {
     makeObservable(this)
 
-    this.read()
+    this.$history = readLocalStorage(HISTORY_KEY) || {}
   }
 
   @action public add(result: QrScanner.ScanResult) {
@@ -34,22 +35,8 @@ class HistoryStore {
       },
     }
 
-    this.write(this.$history)
-  }
-
-  private write(data: HistoryDataframe) {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(data))
-  }
-
-  private read() {
-    try {
-      const value = localStorage.getItem(HISTORY_KEY) || ''
-
-      if (!value) return
-
-      this.$history = JSON.parse(value) as HistoryDataframe
-    } catch {}
+    writeLocalStorage(HISTORY_KEY, this.$history)
   }
 }
 
-export const $history = new HistoryStore()
+export const historyStore = new HistoryStore()

@@ -1,14 +1,14 @@
 import { observer } from 'mobx-react-lite'
 import style from './index.scss'
 import { Button } from '../_uikit/Button'
-import { $history } from '@/store/history'
+import { historyStore } from '@/store/history'
 import { Item } from './Item'
 import { useNavigate } from 'react-router'
 
 export const HistoryView = observer(() => {
   const nav = useNavigate()
 
-  const items = Object.entries($history.$history)
+  const items = Object.entries(historyStore.$history).reverse()
 
   return (
     <div className={style.history}>

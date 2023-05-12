@@ -31,8 +31,6 @@ export const WebCamView = observer(
         const video = ref.current
         if (!video) return
 
-        console.log(cam.$stream)
-
         video.srcObject = cam.$stream || null
 
         return () => {
