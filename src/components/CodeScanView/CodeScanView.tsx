@@ -1,7 +1,7 @@
 import { WebCam } from '@/classes/WebCam'
 import { observer } from 'mobx-react-lite'
 import { Suspense, useContext, useEffect, useRef, useState } from 'react'
-import { WebCamView } from '../WebCamView/WebCamView'
+import { WebCamRender } from '../WebCamRender/WebCamRender'
 import style from './index.scss'
 import { $orientation, Orientation } from '@/store/orientation'
 import { cn } from '@/util/cn'
@@ -85,7 +85,9 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
   return (
     <div className={style.code_scan_box}>
       <div className={style.video_box}>
-        {cam && <WebCamView className={cn(style.video, flip && style.flip)} cam={cam} />}
+        {cam && (
+          <WebCamRender className={cn(style.video, flip && style.flip)} cam={cam} />
+        )}
       </div>
 
       <CornersFrame />

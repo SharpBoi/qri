@@ -9,7 +9,7 @@ import { ImgScanResult } from '@/types/img-scan-result'
 import { historyStore } from '@/store/history'
 import { observer } from 'mobx-react-lite'
 
-export const ImageScan = observer(() => {
+export const ImageScanView = observer(() => {
   const loc = useLocation()
   const nav = useNavigate()
 

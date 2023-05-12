@@ -13,12 +13,12 @@ import {
 } from 'react'
 import style from './index.scss'
 
-export type CameraViewProps = ClassProp & {
+export type WebCamRenderProps = ClassProp & {
   cam?: WebCam
   onCam?: (cam: WebCam) => void
 }
-export const WebCamView = observer(
-  forwardRef<HTMLVideoElement | null, CameraViewProps>(
+export const WebCamRender = observer(
+  forwardRef<HTMLVideoElement | null, WebCamRenderProps>(
     ({ cam: camProp, onCam = noop, className }, fref) => {
       const ref = useRef<HTMLVideoElement>(null)
 

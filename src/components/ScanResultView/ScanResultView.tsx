@@ -7,7 +7,7 @@ import { BrowserButton } from '../_buttons/BrowserButton'
 import { ClipboardButton } from '../_buttons/ClipboardButton'
 import { ShareButton } from '../_buttons/ShareButton'
 
-export function ScanResult() {
+export function ScanResultView() {
   const loc = useLocation()
   const nav = useNavigate()
 
