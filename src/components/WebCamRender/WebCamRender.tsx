@@ -14,48 +14,41 @@ import {
 import style from './index.scss'
 
 export type WebCamRenderProps = ClassProp & {
-  cam?: WebCam
-  onCam?: (cam: WebCam) => void
+  cam: WebCam
 }
 export const WebCamRender = observer(
-  forwardRef<HTMLVideoElement | null, WebCamRenderProps>(
-    ({ cam: camProp, onCam = noop, className }, fref) => {
-      const ref = useRef<HTMLVideoElement>(null)
+  forwardRef<HTMLVideoElement | null, WebCamRenderProps>(({ cam, className }, fref) => {
+    const ref = useRef<HTMLVideoElement>(null)
 
-      const [cam] = useState(() => camProp || new WebCam())
+    // Handle passing stream to video node
+    useEffect(() => {
+      const video = ref.current
+      if (!video) return
 
-      useEffect(() => onCam(cam), [cam])
+      video.srcObject = cam.$stream || null
 
-      // Handle passing stream to video node
-      useEffect(() => {
-        const video = ref.current
-        if (!video) return
+      return () => {
+        video.srcObject = null
+      }
+    }, [cam.$stream])
 
-        video.srcObject = cam.$stream || null
+    useImperativeHandle<HTMLVideoElement | null, HTMLVideoElement | null>(
+      fref,
+      () => ref.current
+    )
 
-        return () => {
-          video.srcObject = null
-        }
-      }, [cam.$stream])
+    const flipStyle: CSSProperties = { transform: `scaleX(${cam.$flip})` }
 
-      useImperativeHandle<HTMLVideoElement | null, HTMLVideoElement | null>(
-        fref,
-        () => ref.current
-      )
-
-      const flipStyle: CSSProperties = { transform: `scaleX(${cam.$flip})` }
-
-      return (
-        <video
-          style={flipStyle}
-          className={cn(style.video_view, className)}
-          autoPlay
-          disablePictureInPicture
-          playsInline
-          controls={false}
-          ref={ref}
-        ></video>
-      )
-    }
-  )
+    return (
+      <video
+        style={flipStyle}
+        className={cn(style.video_view, className)}
+        autoPlay
+        disablePictureInPicture
+        playsInline
+        controls={false}
+        ref={ref}
+      ></video>
+    )
+  })
 )

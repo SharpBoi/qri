@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, ReactNode } from 'react'
+import React, { PropsWithChildren, ReactNode, useEffect, useRef } from 'react'
 import { Button } from '../Button'
 import { ClassProp, ToggleProp } from '@/util/props'
 import { cn } from '@/util/cn'
@@ -19,10 +19,25 @@ export function Dropdown({
   onToggle,
   toggle,
 }: PropsWithChildren & DropdownProps) {
+  const ref = useRef<HTMLButtonElement>(null)
+
   const [opened, setOpen] = usePriorityState(false, toggle, onToggle)
+
+  useEffect(() => {
+    const cb = (e: MouseEvent) => {
+      if (ref.current?.contains(e.target as Node)) return
+
+      setOpen(false)
+    }
+
+    document.addEventListener('click', cb)
+
+    return () => document.removeEventListener('click', cb)
+  })
 
   return (
     <Button
+      ref={ref}
       className={cn(style.dropdown, opened && style.opened, className)}
       toggle={opened}
       onToggle={setOpen}
@@ -38,3 +53,9 @@ export function Dropdown({
     </Button>
   )
 }
+
+const cnv = document.createElement('canvas')
+
+const br = cnv.getContext('bitmaprenderer')
+
+cnv.captureStream()

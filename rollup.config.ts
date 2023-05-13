@@ -3,7 +3,7 @@ import tsPlugin from '@rollup/plugin-typescript'
 import { babel } from '@rollup/plugin-babel'
 import cjsPlugin from '@rollup/plugin-commonjs'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import { terser } from 'rollup-plugin-terser'
+import { terser as terserPlugin } from 'rollup-plugin-terser'
 import serve from 'rollup-plugin-serve'
 import livereload from 'rollup-plugin-livereload'
 import externalPlugin from 'rollup-plugin-peer-deps-external'
@@ -46,6 +46,12 @@ const replace = replacePlugin({
 const ts = tsPlugin({})
 const cjs = cjsPlugin({})
 
+const terser = terserPlugin({
+  format: {
+    comments: false,
+  },
+})
+
 export default defineConfig(async () => {
   console.warn(`!!! you can also run at https://${LOCAL_IP}:${PORT}`)
 
@@ -70,12 +76,7 @@ export default defineConfig(async () => {
       ts,
       cjs,
 
-      isProd &&
-        terser({
-          format: {
-            comments: false,
-          },
-        }),
+      isProd && terser,
 
       manifesto({ fileName: 'manifest.sw.json' }),
     ],
@@ -131,12 +132,7 @@ export default defineConfig(async () => {
       ts,
       cjs,
 
-      isProd &&
-        terser({
-          format: {
-            comments: false,
-          },
-        }),
+      isProd && terser,
 
       htmlGenerator({
         template: 'src/index.html',
@@ -171,5 +167,5 @@ export default defineConfig(async () => {
     },
   }
 
-  return [swConfig, appConfig]
+  return [appConfig, swConfig]
 })

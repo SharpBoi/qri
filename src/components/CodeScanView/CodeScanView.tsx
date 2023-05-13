@@ -1,6 +1,6 @@
 import { WebCam } from '@/classes/WebCam'
 import { observer } from 'mobx-react-lite'
-import { Suspense, useContext, useEffect, useRef, useState } from 'react'
+import { Suspense, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { WebCamRender } from '../WebCamRender/WebCamRender'
 import style from './index.scss'
 import { $orientation, Orientation } from '@/store/orientation'
