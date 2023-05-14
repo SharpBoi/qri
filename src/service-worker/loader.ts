@@ -1,4 +1,4 @@
-import { swMsg } from './sw-util'
+import { swListenMessage } from './sw-util'
 import { SWCheckUpdate, SWMessage } from './types'
 
 export {}
@@ -118,7 +118,7 @@ async function main() {
     }
   } catch {}
 
-  swMsg(sw, 'update-result', async (msg, dispose) => {
+  swListenMessage(sw, 'update-result', async (msg, dispose) => {
     dispose()
 
     if (msg.result === 'updated') {

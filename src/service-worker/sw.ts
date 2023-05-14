@@ -4,9 +4,9 @@ import {
   cleanCache,
   fromCache,
   open,
-  postMessage,
+  swPostMessage,
   respondCacheOnly,
-  swMsg,
+  swListenMessage,
 } from './sw-util'
 import { SWMessage, SWUpdateResult } from './types'
 
@@ -72,14 +72,14 @@ sw.addEventListener('fetch', async e => {
   respondCacheOnly(e)
 })
 
-swMsg(sw, 'check-update', async msg => {
+swListenMessage(sw, 'check-update', async msg => {
   console.log('MSG from client', msg)
 
   const need = await checkAppNeedUpdate()
 
   if (need) await fillCache()
 
-  postMessage(<SWUpdateResult>{
+  swPostMessage(<SWUpdateResult>{
     type: 'update-result',
     result: need ? 'updated' : 'no',
   })

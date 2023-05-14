@@ -63,7 +63,7 @@ export default defineConfig(async () => {
       dir: DIST,
       format: 'cjs',
       entryFileNames: `[name]-[hash].js`,
-      // sourcemap: true,
+      sourcemap: isDev ? 'inline' : true,
     },
 
     plugins: [
@@ -91,7 +91,7 @@ export default defineConfig(async () => {
       dir: DIST,
       format: 'esm',
       entryFileNames: `[name]-[hash].js`,
-      // sourcemap: true,
+      sourcemap: isDev ? 'inline' : true,
       exports: 'named',
       manualChunks: {
         'vendor/react': ['react', 'react-dom'],

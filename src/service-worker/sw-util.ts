@@ -9,7 +9,7 @@ export const CACHE_404 = new Response(undefined, {
   statusText: 'Not found in cache',
 })
 
-export function swMsg<E extends SWMessage['type']>(
+export function swListenMessage<E extends SWMessage['type']>(
   sw: ServiceWorkerGlobalScope | ServiceWorkerContainer,
   eventName: E,
   cb: (msg: Extract<SWMessage, { type: E }>, dispose: VoidFunction) => void
@@ -33,7 +33,7 @@ export function swMsg<E extends SWMessage['type']>(
 
 export const open = () => sw.caches.open(CACHE)
 
-export function postMessage(...args: Parameters<Client['postMessage']>) {
+export function swPostMessage(...args: Parameters<Client['postMessage']>) {
   sw.clients.matchAll().then(cs => {
     cs.forEach(c => {
       c.postMessage(...args)

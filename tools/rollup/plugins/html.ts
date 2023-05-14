@@ -39,6 +39,9 @@ export function htmlGenerator(props?: HtmlGeneratorProps): import('rollup').Plug
 
   return {
     name: 'html-generator',
+    buildStart() {
+      this.addWatchFile(template)
+    },
     generateBundle(ops, bundle) {
       console.log('Generating html ...')
 
@@ -85,9 +88,6 @@ export function htmlGenerator(props?: HtmlGeneratorProps): import('rollup').Plug
         fileName: 'index.html',
         source: html,
       })
-    },
-    buildStart() {
-      this.addWatchFile(template)
     },
   }
 }
