@@ -3,6 +3,8 @@ import { SWCheckUpdate, SWMessage } from './types'
 
 export {}
 
+console.log(' ad asd as')
+
 const sw = navigator.serviceWorker
 
 function pull(url: string, bypassCache?: boolean) {
@@ -70,11 +72,18 @@ function appManifest() {
   return pull(`manifest.app.json`)
     .then(res => res.json())
     .then(json => json as Record<string, any>)
+    .catch(() => undefined)
 }
 function swManifest() {
   return pull('manifest.sw.json', true)
     .then(res => res.json())
     .then(json => json as Record<string, any>)
+    .catch(() => undefined)
+}
+async function manifestos() {
+  return Promise.all([appManifest(), swManifest()]).then(
+    r => r as [appManifest: typeof r[0], swManifest: typeof r[1]]
+  )
 }
 
 async function checkSWneedUpdate() {
@@ -83,6 +92,7 @@ async function checkSWneedUpdate() {
     if (!currentSW) return false
 
     const swMan = await swManifest()
+    if (!swMan) return false
 
     const currentSWfileName = new URL(currentSW.scriptURL).pathname.split('/').at(-1)
 
@@ -111,6 +121,7 @@ async function main() {
       console.log('sw install')
 
       const swMan = await swManifest()
+      if (!swMan) throw new Error('')
 
       await register(swMan['sw-sw'])
     } else {
@@ -126,7 +137,7 @@ async function main() {
     } else if (msg.result === 'no') {
       const man = await appManifest()
 
-      await loadMainApp(man['main'])
+      await loadMainApp(man!['main'])
       hideLoader()
     }
   })
@@ -137,8 +148,8 @@ async function main() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // main()
+  main()
 
   const man = await appManifest()
-  loadMainApp(man['main'])
+  loadMainApp(man!['main'])
 })

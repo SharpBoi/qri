@@ -3,21 +3,23 @@ import * as path from 'path'
 import { OutputAsset, OutputChunk } from 'rollup'
 import * as util from 'util'
 
-type ChunkName = string & {}
-type ScriptLoad = 'defer' | 'async' | 'regular'
-
 function log(...params: any[]) {
   console.log(
     util.inspect(params, {
       colors: true,
       breakLength: 200,
-      depth: 1,
+      depth: 3,
       maxStringLength: 200,
     })
   )
 }
 
+type ChunkName = string & {}
+type ScriptLoad = 'defer' | 'async' | 'regular'
+
 type HtmlGeneratorProps = {
+  template?: string
+  inline?: Promise<string>[]
   chunks?: {
     load?: ScriptLoad
 
@@ -28,7 +30,6 @@ type HtmlGeneratorProps = {
       }
     }
   }
-  template?: string
 }
 
 export function htmlGenerator(props?: HtmlGeneratorProps): import('rollup').Plugin {
@@ -42,7 +43,7 @@ export function htmlGenerator(props?: HtmlGeneratorProps): import('rollup').Plug
     buildStart() {
       this.addWatchFile(template)
     },
-    generateBundle(ops, bundle) {
+    async generateBundle(ops, bundle) {
       console.log('Generating html ...')
 
       let html = fs.readFileSync(template).toString()
@@ -58,21 +59,27 @@ export function htmlGenerator(props?: HtmlGeneratorProps): import('rollup').Plug
           .filter(c =>
             chunksEntries ? Object.keys(chunksEntries).includes(c.name) : true
           )
+          .filter(c => c.isEntry)
           .map(c => {
             const entry = chunksEntries?.[c.name]
+
+            const load = chunks?.load || entry?.load || ''
+            const loadAttr = load === 'regular' ? '' : load
+            const type = ops.format === 'es' ? 'type="module"' : ''
+            const dataName = `data-name="${c.name}"`
+            const dataFileName = `data-filename="${c.fileName}"`
+
+            if (ops.format === 'amd') {
+              return `<script data-main="${c.fileName}"></script>`
+            }
 
             if (entry?.inline) {
               delete bundle[c.fileName]
 
-              return `<script type="module" data-name="${c.name}" data-filename="${c.fileName}">${c.code}</script>`
+              return `<script ${type} ${dataName} ${dataFileName}>${c.code}</script>`
             }
 
-            const load = chunks?.load || entry?.load || ''
-            const attr = load === 'regular' ? '' : load
-
-            return `<script ${attr} ${ops.format === 'es' ? 'type="module"' : ''} src="${
-              c.fileName
-            }"></script>`
+            return `<script ${loadAttr} ${type} src="${c.fileName}"></script>`
           })
           .join('\n')
       )
@@ -82,6 +89,9 @@ export function htmlGenerator(props?: HtmlGeneratorProps): import('rollup').Plug
         '${styles}',
         styles.map(s => `<link rel="stylesheet" href="${s.fileName}" />`).join('\n')
       )
+
+      const inlines = await Promise.all(props?.inline || [])
+      html = html.replace('${inline}', inlines.join('\n'))
 
       this.emitFile({
         type: 'asset',

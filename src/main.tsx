@@ -4,6 +4,8 @@ import { configure } from 'mobx'
 import ReactDOM from 'react-dom/client'
 import { App } from './App'
 
+export {}
+
 // Because QrScanner kills all MedaStream`s that needed for my WebCam
 // when blur window
 document.addEventListener('visibilitychange', e => {

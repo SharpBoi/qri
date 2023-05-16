@@ -12,7 +12,7 @@ import { SWMessage, SWUpdateResult } from './types'
 
 export {}
 
-console.log('hllo SW 12')
+console.log('hllo SW 12 1231 2312 ')
 
 const APP_MANIFEST_URL = 'manifest.app.json'
 

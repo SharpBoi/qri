@@ -1,4 +1,4 @@
-import { RollupOptions, defineConfig } from 'rollup'
+import { ModuleFormat, RollupOptions, defineConfig } from 'rollup'
 import tsPlugin from '@rollup/plugin-typescript'
 import { babel } from '@rollup/plugin-babel'
 import cjsPlugin from '@rollup/plugin-commonjs'
@@ -6,10 +6,10 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { terser as terserPlugin } from 'rollup-plugin-terser'
 import serve from 'rollup-plugin-serve'
 import livereload from 'rollup-plugin-livereload'
-import externalPlugin from 'rollup-plugin-peer-deps-external'
 import replacePlugin from '@rollup/plugin-replace'
 import * as os from 'os'
 import * as fs from 'fs'
+import * as fsp from 'fs/promises'
 import postcss from 'rollup-plugin-postcss'
 import svgr from '@svgr/rollup'
 import aliasPlugin from '@rollup/plugin-alias'
@@ -21,6 +21,8 @@ import { smartDelete } from './tools/rollup/plugins/smart-delete'
 const PORT = 10001
 const LOCAL_IP = os.networkInterfaces().en0?.[1].address
 const DIST = './public/dist'
+
+const APP_FMT = 'esm' as ModuleFormat
 
 const https = {
   key: fs.readFileSync('./tools/https/key.pem'),
@@ -85,11 +87,11 @@ export default defineConfig(async () => {
   const appConfig: RollupOptions = {
     input: {
       main: './src/main.tsx',
-      'sw-loader': './src/service-worker/loader.ts',
+      loader: './src/loader.ts',
     },
     output: {
       dir: DIST,
-      format: 'esm',
+      format: APP_FMT,
       entryFileNames: `[name]-[hash].js`,
       sourcemap: isDev ? 'inline' : true,
       exports: 'named',
@@ -105,8 +107,6 @@ export default defineConfig(async () => {
 
       replace,
 
-      //@ts-ignore
-      externalPlugin({}),
       nodeResolve({
         browser: true,
         preferBuiltins: false,
@@ -117,7 +117,15 @@ export default defineConfig(async () => {
       babel({
         exclude: 'node_modules/**',
         extensions: ['.ts', '.tsx'],
-        presets: [['@babel/preset-react', { runtime: 'automatic', loose: false }]],
+        presets: [
+          [
+            '@babel/preset-env',
+            {
+              // useBuiltIns: 'usage',
+            },
+          ],
+          ['@babel/preset-react', { runtime: 'automatic', loose: false }],
+        ],
         plugins: [['@babel/plugin-proposal-decorators', { legacy: true }]],
       }),
 
@@ -136,10 +144,18 @@ export default defineConfig(async () => {
 
       htmlGenerator({
         template: 'src/index.html',
+        inline:
+          APP_FMT === 'amd'
+            ? [
+                fsp
+                  .readFile('./public/require.js')
+                  .then(code => `<script>${code}\n</script>`),
+              ]
+            : [],
         chunks: {
           load: 'defer',
           entries: {
-            'sw-loader': { inline: true },
+            loader: { inline: true },
           },
         },
       }),
@@ -152,7 +168,7 @@ export default defineConfig(async () => {
           // host: LOCAL_IP,
           port: PORT,
           https,
-          historyApiFallback: true,
+          // historyApiFallback: true,
         }),
       isDev &&
         livereload({
