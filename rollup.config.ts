@@ -163,13 +163,13 @@ export default defineConfig(async () => {
         fileName: 'manifest.app.json',
         append: {
           routes: {
-            'index.html': ['/index.html', '/'],
+            'index.html': ['/index.html', 'index', '/'],
           },
         },
       }),
 
       copyPlugin({
-        targets: [{ src: 'public/**/*', dest: DIST, ignore: [REQUIREJS_PATH] }],
+        targets: [{ src: 'public/*', dest: DIST, ignore: [REQUIREJS_PATH] }],
       }),
 
       isDev &&
