@@ -1,50 +1,39 @@
 import { Manifest } from 'tools/rollup/plugins/manifest'
+import {
+  getSW,
+  swListenMessage,
+  swPostMessage,
+  safeFetch,
+  registerSW,
+  getSWFileName,
+} from './service-worker/sw-util'
 
 export {}
 
 const sw = navigator.serviceWorker
 
+const MAX_FETCH_TIME = 700
+
 function loadApp() {
   return import('./main')
 }
 
-async function safeFetch(url: string) {
-  try {
-    const res = await fetch(url)
-    return res.text()
-  } catch {
-    return undefined
-  }
-}
-
 function loadAppManifest() {
-  return safeFetch('manifest.app.json')
+  return safeFetch('manifest.app.json', MAX_FETCH_TIME)
     .then(r => JSON.parse(r || '') as Manifest)
     .catch(() => undefined)
 }
 function loadSWManifest() {
-  return safeFetch('manifest.sw.json')
+  return safeFetch('manifest.sw.json', MAX_FETCH_TIME)
     .then(r => JSON.parse(r || '') as Manifest)
     .catch(() => undefined)
 }
 
-async function currentRegistration() {
-  return navigator.serviceWorker.getRegistration()
-}
-
-async function getCurrentSW() {
-  const reg = await currentRegistration()
-  return reg?.installing || reg?.waiting || reg?.active || undefined
-}
-
-async function checkSWneedUpdate(swMan: any) {
+async function checkSWneedUpdate(swMan: Manifest) {
   try {
-    const currentSW = await getCurrentSW()
-    if (!currentSW) return false
+    const currentSWfileName = await getSWFileName()
 
-    const currentSWfileName = new URL(currentSW.scriptURL).pathname.split('/').at(-1)
-
-    const actualSWfileName = swMan['sw-sw']
+    const actualSWfileName = swMan.chunks['sw-sw'][0]
 
     return currentSWfileName !== actualSWfileName
   } catch {
@@ -52,47 +41,50 @@ async function checkSWneedUpdate(swMan: any) {
   }
 }
 
-function registerSW(url: string) {
-  return new Promise<void>(async res => {
-    const reg = await sw.register(url, { scope: '/' })
-    console.log('loader.ts install', reg, reg.installing, reg.waiting, reg.active)
-
-    const instance = reg.installing || reg.waiting || reg.active
-    if (!instance) throw new Error('sw INSTANCE missing')
-
-    if (instance?.state === 'activated') return res()
-
-    instance.onstatechange = () => {
-      if (instance.state === 'activated') return res()
-    }
-  })
-}
-
 async function swFlow(swMan: Manifest) {
   const swNeedUpdate = await checkSWneedUpdate(swMan)
+  const hasSW = !!(await getSW())
 
-  if (swNeedUpdate) {
-    const reg = await currentRegistration()
-    await reg?.unregister()
-  }
+  console.log({ swNeedUpdate })
 
-  const hasSW = !!(await getCurrentSW())
-
-  if (!hasSW) {
+  if (swNeedUpdate || !hasSW) {
     await registerSW(swMan.chunks['sw-sw'][0])
-
     window.location.reload()
   }
 }
 
+async function appFlow(appMan: Manifest) {
+  return new Promise<void>(res => {
+    swPostMessage(sw, { type: 'check-update', appManifest: appMan })
+
+    swListenMessage(sw, 'update-result', (msg, dispose) => {
+      dispose()
+
+      console.log(msg)
+
+      if (msg.result === 'no') {
+        return res()
+      }
+
+      if (msg.result === 'updated') {
+        window.location.reload()
+      }
+    })
+  })
+}
+
 async function main() {
+  console.log('Loader v 1')
+
   const [appMan, swMan] = await Promise.all([loadAppManifest(), loadSWManifest()])
 
-  // if (swMan) await swFlow(swMan)
+  console.log(appMan, swMan)
 
-  console.log('swFlow done')
+  if (swMan) await swFlow(swMan)
 
-  loadApp()
+  if (appMan) await appFlow(appMan)
+
+  await loadApp()
 }
 
 main()

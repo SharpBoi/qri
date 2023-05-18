@@ -1,42 +1,29 @@
-import {
-  CACHE_404,
-  cachePut,
-  cleanCache,
-  fromCache,
-  open,
-  swPostMessage,
-  respondCacheOnly,
-  swListenMessage,
-} from './sw-util'
-import { SWMessage, SWUpdateResult } from './types'
+import { Manifest } from 'tools/rollup/plugins/manifest'
+import { cleanCache, open, swPostMessage, swListenMessage } from './sw-util'
 
 export {}
 
-console.log('hllo SW 12 1231 2312 ')
-
-const APP_MANIFEST_URL = 'manifest.app.json'
-
 const sw = self as any as ServiceWorkerGlobalScope
 
-async function fillCache() {
+async function fillCache(appMan: Manifest) {
+  // TODO optimize: caches intersection
   await cleanCache()
 
-  // TODO improve exception
-  const res = await fetch(APP_MANIFEST_URL)
-  await cachePut(APP_MANIFEST_URL, res.clone())
-  await cachePut('/', await fetch('index.html'))
+  const cache = await open()
 
-  const appMan = await res.json()
+  return Promise.all(
+    appMan.files
+      .map(file => {
+        const routes = appMan.routes[file] || [file]
 
-  for (const file of appMan.files) {
-    await cachePut(file, await fetch(file))
-  }
+        return routes.map(route => cache.add(route))
+      })
+      .flat()
+  )
 }
 
-async function checkAppNeedUpdate() {
+async function checkAppNeedUpdate(appMan: Manifest) {
   try {
-    const appMan = await fetch(APP_MANIFEST_URL).then(res => res.json())
-
     const cache = await open()
 
     for (const file of appMan.files) {
@@ -50,8 +37,7 @@ async function checkAppNeedUpdate() {
 }
 
 sw.addEventListener('install', e => {
-  console.log('sw.ts install', e)
-
+  console.log('sw install', e)
   return sw.skipWaiting()
 })
 
@@ -61,25 +47,29 @@ sw.addEventListener('activate', e => {
 })
 
 sw.addEventListener('fetch', async e => {
-  const req = e.request
-  if (!req.url.startsWith('http')) return
+  e.respondWith(
+    (async () => {
+      const cache = await open()
 
-  const url = new URL(req.url)
-  const bypassCache = url.searchParams.has('sw-bc')
+      const res = await cache.match(e.request)
 
-  if (bypassCache) return e.respondWith(fetch(req))
+      if (res) return res
 
-  respondCacheOnly(e)
+      return fetch(e.request)
+    })()
+  )
 })
 
 swListenMessage(sw, 'check-update', async msg => {
-  console.log('MSG from client', msg)
+  console.log('SW v 1')
 
-  const need = await checkAppNeedUpdate()
+  console.log('SW: msg from client', msg)
 
-  if (need) await fillCache()
+  const need = await checkAppNeedUpdate(msg.appManifest)
 
-  swPostMessage(<SWUpdateResult>{
+  if (need) await fillCache(msg.appManifest)
+
+  swPostMessage(sw, {
     type: 'update-result',
     result: need ? 'updated' : 'no',
   })

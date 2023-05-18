@@ -17,10 +17,13 @@ import path from 'path'
 import { manifesto } from './tools/rollup/plugins/manifest'
 import { htmlGenerator } from './tools/rollup/plugins/html'
 import { smartDelete } from './tools/rollup/plugins/smart-delete'
+import copyPlugin from 'rollup-plugin-copy'
 
 const PORT = 10001
 const LOCAL_IP = os.networkInterfaces().en0?.[1].address
-const DIST = './public/dist'
+const DIST = './dist'
+
+const REQUIREJS_PATH = './public/require.js'
 
 const APP_FMT = 'esm' as ModuleFormat
 
@@ -146,21 +149,28 @@ export default defineConfig(async () => {
         template: 'src/index.html',
         inline:
           APP_FMT === 'amd'
-            ? [
-                fsp
-                  .readFile('./public/require.js')
-                  .then(code => `<script>${code}\n</script>`),
-              ]
+            ? [fsp.readFile(REQUIREJS_PATH).then(code => `<script>${code}\n</script>`)]
             : [],
         chunks: {
           load: 'defer',
           entries: {
-            loader: { inline: true },
+            loader: { inline: false },
           },
         },
       }),
 
-      manifesto({ fileName: 'manifest.app.json' }),
+      manifesto({
+        fileName: 'manifest.app.json',
+        append: {
+          routes: {
+            'index.html': ['/index.html', '/'],
+          },
+        },
+      }),
+
+      copyPlugin({
+        targets: [{ src: 'public/**/*', dest: DIST, ignore: [REQUIREJS_PATH] }],
+      }),
 
       isDev &&
         serve({
@@ -168,7 +178,7 @@ export default defineConfig(async () => {
           // host: LOCAL_IP,
           port: PORT,
           https,
-          // historyApiFallback: true,
+          historyApiFallback: true,
         }),
       isDev &&
         livereload({

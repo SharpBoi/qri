@@ -24,6 +24,7 @@
     "mobx-react-lite": "^3.4.0",
     "prettier": "^2.7.1",
     "rollup": "^3.20.7",
+    "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-livereload": "^2.0.5",
     "rollup-plugin-postcss": "^4.0.2",
