@@ -18,11 +18,6 @@ function loadApp() {
   return import('./main')
 }
 
-function loadAppManifest() {
-  return safeFetch('manifest.app.json', MAX_FETCH_TIME)
-    .then(r => JSON.parse(r || '') as Manifest)
-    .catch(() => undefined)
-}
 function loadSWManifest() {
   return safeFetch('manifest.sw.json', MAX_FETCH_TIME)
     .then(r => JSON.parse(r || '') as Manifest)
@@ -53,36 +48,14 @@ async function swFlow(swMan: Manifest) {
   }
 }
 
-async function appFlow(appMan: Manifest) {
-  return new Promise<void>(res => {
-    swPostMessage(sw, { type: 'check-update', appManifest: appMan })
-
-    swListenMessage(sw, 'update-result', (msg, dispose) => {
-      dispose()
-
-      console.log(msg)
-
-      if (msg.result === 'no') {
-        return res()
-      }
-
-      if (msg.result === 'updated') {
-        window.location.reload()
-      }
-    })
-  })
-}
-
 async function main() {
-  console.log('Loader v 3')
+  console.log('Loader v 6')
 
-  const [appMan, swMan] = await Promise.all([loadAppManifest(), loadSWManifest()])
+  const swMan = await loadSWManifest()
 
-  console.log(appMan, swMan)
+  console.log({ swMan })
 
   if (swMan) await swFlow(swMan)
-
-  if (appMan) await appFlow(appMan)
 
   await loadApp()
 }

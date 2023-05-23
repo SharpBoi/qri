@@ -1,14 +1,5 @@
 import { Manifest } from 'tools/rollup/plugins/manifest'
-import {
-  cleanCache,
-  open,
-  swPostMessage,
-  swListenMessage,
-  storeSet,
-  storeGet,
-  netFirst,
-  cacheFirst,
-} from './sw-util'
+import { open, netFirst, cacheFirst, APP_CACHE_NAME } from './sw-util'
 
 export {}
 
@@ -18,50 +9,56 @@ console.log(appManifest)
 const sw = self as any as ServiceWorkerGlobalScope
 
 async function fillCache(appMan: Manifest) {
-  // TODO optimize: caches intersection
-  await cleanCache()
+  const cache = await open(APP_CACHE_NAME)
 
-  const cache = await open()
+  const manifestFiles = appMan.files.map(f => '/' + f)
+  const cacheFiles = await cache.keys().then(ks => ks.map(k => new URL(k.url).pathname))
 
-  return Promise.all(
-    appMan.files.map(file => {
-      return cache.add(file)
+  const toDelete = cacheFiles.filter(cf => !manifestFiles.includes(cf))
+
+  const toAdd = manifestFiles.filter(mf => !cacheFiles.includes(mf))
+
+  await Promise.all(
+    toDelete.map(async f => {
+      await cache.delete(f)
+    })
+  )
+
+  await Promise.all(
+    toAdd.map(async f => {
+      await cache.add(f)
     })
   )
 }
 
-async function checkAppNeedUpdate(appMan: Manifest) {
-  try {
-    const cache = await open()
-
-    for (const file of appMan.files) {
-      const res = await cache.match(file)
-
-      if (!res) return true
-    }
-  } catch {}
-
-  return false
-}
-
-function handleIndex(e: FetchEvent) {
-  const req = e.request
+async function handleIndex(req: Request) {
   const path = new URL(req.url).pathname
 
   const variants = ['/index.html', '/']
 
   if (variants.includes(path)) {
-    e.respondWith(netFirst(req, true))
+    const resp = await netFirst(req, true)
 
-    return true
+    const cac = await open(APP_CACHE_NAME)
+    await cac.put(req, resp.clone())
+    await cac.put('/', resp.clone())
+
+    return resp
   }
 
-  return false
+  return undefined
 }
 
 sw.addEventListener('install', e => {
   console.log('sw install', e)
-  return sw.skipWaiting()
+
+  e.waitUntil(
+    (async () => {
+      if (appManifest) await fillCache(appManifest)
+
+      await sw.skipWaiting()
+    })()
+  )
 })
 
 sw.addEventListener('activate', e => {
@@ -70,23 +67,12 @@ sw.addEventListener('activate', e => {
 })
 
 sw.addEventListener('fetch', async e => {
-  if (handleIndex(e)) return
+  e.respondWith(
+    (async () => {
+      const index = await handleIndex(e.request)
+      if (index) return index
 
-  e.respondWith(cacheFirst(e.request))
-})
-
-swListenMessage(sw, 'check-update', async msg => {
-  console.log('SW v 1')
-  console.log('SW: msg from client', msg)
-
-  await storeSet('app_manifest', JSON.stringify(msg.appManifest))
-
-  const need = await checkAppNeedUpdate(msg.appManifest)
-
-  if (need) await fillCache(msg.appManifest)
-
-  swPostMessage(sw, {
-    type: 'update-result',
-    result: need ? 'updated' : 'no',
-  })
+      return cacheFirst(e.request)
+    })()
+  )
 })

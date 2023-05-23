@@ -2,11 +2,13 @@ import { SWMessage } from './types'
 
 export const selfSW = self as any as ServiceWorkerGlobalScope
 
-export const CACHE = 'cache-v1'
+export const APP_CACHE_NAME = 'app-cache:1'
 
-export const open = () => selfSW.caches.open(CACHE)
+export const open = (name: string) => selfSW.caches.open(name)
 
 const STORE_PREFIX = '@@-STORE-'
+
+// FETCHES
 
 export async function safeFetch(url: RequestInfo | URL, timeout = 0) {
   return new Promise<string | undefined>(res => {
@@ -26,6 +28,28 @@ export async function safeFetch(url: RequestInfo | URL, timeout = 0) {
       .catch(() => res(undefined))
   })
 }
+
+export async function netFirst(req: RequestInfo | URL, cacheNetResponse = false) {
+  const cac = await open(APP_CACHE_NAME)
+  const cacheResp = await cac.match(req)
+  const netResp = await fetch(req).catch(() => undefined)
+
+  if (netResp && cacheNetResponse) cac.put(req, netResp.clone())
+
+  return netResp || cacheResp || new Response(undefined, { status: 404 })
+}
+
+export async function cacheFirst(req: RequestInfo | URL) {
+  const cache = await open(APP_CACHE_NAME)
+
+  const res = await cache.match(req)
+
+  if (res) return res
+
+  return fetch(req)
+}
+
+// SW
 
 export function registerSW(url: string) {
   return new Promise<void>(async res => {
@@ -51,6 +75,15 @@ export async function getSW() {
   const reg = await getRegistration()
   return reg?.installing || reg?.waiting || reg?.active || undefined
 }
+
+export async function getSWFileName() {
+  const currentSW = await getSW()
+  if (!currentSW) return
+
+  return new URL(currentSW.scriptURL).pathname.split('/').at(-1)
+}
+
+// EVENTS
 
 export function swListenMessage<E extends SWMessage['type']>(
   sw: ServiceWorkerGlobalScope | ServiceWorkerContainer,
@@ -99,45 +132,20 @@ export async function swPostMessage(
   }
 }
 
+// CACHES
+
 export async function cleanCache() {
-  return selfSW.caches.delete(CACHE)
-}
-
-export async function getSWFileName() {
-  const currentSW = await getSW()
-  if (!currentSW) return
-
-  return new URL(currentSW.scriptURL).pathname.split('/').at(-1)
-}
-
-export async function netFirst(req: RequestInfo | URL, cacheNetResponse = false) {
-  const cac = await open()
-  const cacheResp = await cac.match(req)
-  const netResp = await fetch(req).catch(() => undefined)
-
-  if (netResp && cacheNetResponse) cac.put(req, netResp.clone())
-
-  return netResp || cacheResp || new Response(undefined, { status: 404 })
-}
-
-export async function cacheFirst(req: RequestInfo | URL) {
-  const cache = await open()
-
-  const res = await cache.match(req)
-
-  if (res) return res
-
-  return fetch(req)
+  return selfSW.caches.delete(APP_CACHE_NAME)
 }
 
 export async function storeSet(key: string, value: string) {
-  const c = await open()
+  const c = await open(APP_CACHE_NAME)
 
   await c.put(STORE_PREFIX + key, new Response(value))
 }
 
 export async function storeGet(key: string) {
-  const c = await open()
+  const c = await open(APP_CACHE_NAME)
 
   const res = await c.match(STORE_PREFIX + key)
 
