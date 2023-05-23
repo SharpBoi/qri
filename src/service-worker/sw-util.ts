@@ -4,14 +4,11 @@ export const selfSW = self as any as ServiceWorkerGlobalScope
 
 export const CACHE = 'cache-v1'
 
-export const CACHE_404 = new Response(undefined, {
-  status: 404,
-  statusText: 'Not found in cache',
-})
-
 export const open = () => selfSW.caches.open(CACHE)
 
-export async function safeFetch(url: string, timeout = 0) {
+const STORE_PREFIX = '@@-STORE-'
+
+export async function safeFetch(url: RequestInfo | URL, timeout = 0) {
   return new Promise<string | undefined>(res => {
     const abort = new AbortController()
 
@@ -111,4 +108,38 @@ export async function getSWFileName() {
   if (!currentSW) return
 
   return new URL(currentSW.scriptURL).pathname.split('/').at(-1)
+}
+
+export async function netFirst(req: RequestInfo | URL, cacheNetResponse = false) {
+  const cac = await open()
+  const cacheResp = await cac.match(req)
+  const netResp = await fetch(req).catch(() => undefined)
+
+  if (netResp && cacheNetResponse) cac.put(req, netResp.clone())
+
+  return netResp || cacheResp || new Response(undefined, { status: 404 })
+}
+
+export async function cacheFirst(req: RequestInfo | URL) {
+  const cache = await open()
+
+  const res = await cache.match(req)
+
+  if (res) return res
+
+  return fetch(req)
+}
+
+export async function storeSet(key: string, value: string) {
+  const c = await open()
+
+  await c.put(STORE_PREFIX + key, new Response(value))
+}
+
+export async function storeGet(key: string) {
+  const c = await open()
+
+  const res = await c.match(STORE_PREFIX + key)
+
+  return res?.text()
 }

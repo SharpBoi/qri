@@ -1,4 +1,4 @@
-import { ModuleFormat, RollupOptions, defineConfig } from 'rollup'
+import { InputOption, ModuleFormat, RollupOptions, defineConfig } from 'rollup'
 import tsPlugin from '@rollup/plugin-typescript'
 import { babel } from '@rollup/plugin-babel'
 import cjsPlugin from '@rollup/plugin-commonjs'
@@ -14,16 +14,19 @@ import postcss from 'rollup-plugin-postcss'
 import svgr from '@svgr/rollup'
 import aliasPlugin from '@rollup/plugin-alias'
 import path from 'path'
-import { manifesto } from './tools/rollup/plugins/manifest'
+import { Manifest, manifesto } from './tools/rollup/plugins/manifest'
 import { htmlGenerator } from './tools/rollup/plugins/html'
 import { smartDelete } from './tools/rollup/plugins/smart-delete'
 import copyPlugin from 'rollup-plugin-copy'
+import { smartReplace } from './tools/rollup/plugins/smart-replace'
 
 const PORT = 10001
 const LOCAL_IP = os.networkInterfaces().en0?.[1].address
 const DIST = './dist'
+const APP_MANIFEST_NAME = 'manifest.app.json'
+const SW_MANIFEST_NAME = 'manifest.sw.json'
 
-const REQUIREJS_PATH = './public/require.js'
+const REQUIREJS_PATH = 'require.js'
 
 const APP_FMT = 'esm' as ModuleFormat
 
@@ -37,61 +40,40 @@ const isProd = !isDev
 
 fs.rmSync(DIST, { force: true, recursive: true })
 
-const alias = aliasPlugin({
-  entries: {
-    '@': path.resolve(__dirname, 'src'),
-  },
-})
+const alias = () =>
+  aliasPlugin({
+    entries: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  })
 
-const replace = replacePlugin({
-  preventAssignment: true,
-  'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-})
+const replace = () =>
+  replacePlugin({
+    preventAssignment: true,
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+  })
 
-const ts = tsPlugin({})
-const cjs = cjsPlugin({})
+const ts = () => tsPlugin({})
+const cjs = () => cjsPlugin({})
 
-const terser = terserPlugin({
-  format: {
-    comments: false,
-  },
-})
+const terser = () =>
+  terserPlugin({
+    format: {
+      comments: false,
+    },
+  })
 
 export default defineConfig(async () => {
   console.warn(`!!! you can also run at https://${LOCAL_IP}:${PORT}`)
 
-  const swConfig: RollupOptions = {
-    input: {
-      'sw-sw': './src/service-worker/sw.ts',
-    },
-    output: {
-      dir: DIST,
-      format: 'cjs',
-      entryFileNames: `[name]-[hash].js`,
-      sourcemap: isDev ? 'inline' : true,
-    },
-
-    plugins: [
-      alias,
-
-      replace,
-
-      smartDelete({ dir: DIST }),
-
-      ts,
-      cjs,
-
-      isProd && terser,
-
-      manifesto({ fileName: 'manifest.sw.json' }),
-    ],
+  const input: InputOption = {
+    main: './src/main.tsx',
+    loader: './src/loader.ts',
   }
+  if (APP_FMT === 'amd') input.requirejs = './src/assets/js/require.js'
 
   const appConfig: RollupOptions = {
-    input: {
-      main: './src/main.tsx',
-      loader: './src/loader.ts',
-    },
+    input,
     output: {
       dir: DIST,
       format: APP_FMT,
@@ -100,15 +82,16 @@ export default defineConfig(async () => {
       exports: 'named',
       manualChunks: {
         'vendor/react': ['react', 'react-dom'],
+        'vendor/react-router': ['react-router', 'react-router-dom'],
         'vendor/mobx': ['mobx'],
       },
     },
     context: 'this',
 
     plugins: [
-      alias,
+      alias(),
 
-      replace,
+      replace(),
 
       nodeResolve({
         browser: true,
@@ -140,17 +123,14 @@ export default defineConfig(async () => {
 
       svgr({}),
 
-      ts,
-      cjs,
+      ts(),
+      cjs(),
 
-      isProd && terser,
+      isProd && terser(),
 
       htmlGenerator({
         template: 'src/index.html',
-        inline:
-          APP_FMT === 'amd'
-            ? [fsp.readFile(REQUIREJS_PATH).then(code => `<script>${code}\n</script>`)]
-            : [],
+        inline: [APP_FMT === 'amd' && `<script src="${REQUIREJS_PATH}"></script>`],
         chunks: {
           load: 'defer',
           entries: {
@@ -159,18 +139,11 @@ export default defineConfig(async () => {
         },
       }),
 
-      manifesto({
-        fileName: 'manifest.app.json',
-        append: {
-          routes: {
-            'index.html': ['/index.html', 'index', '/'],
-          },
-        },
+      copyPlugin({
+        targets: [{ src: 'public/*', dest: DIST }],
       }),
 
-      copyPlugin({
-        targets: [{ src: 'public/*', dest: DIST, ignore: [REQUIREJS_PATH] }],
-      }),
+      manifesto({ fileName: APP_MANIFEST_NAME }),
 
       isDev &&
         serve({
@@ -191,6 +164,46 @@ export default defineConfig(async () => {
     watch: {
       clearScreen: false,
     },
+  }
+
+  const swConfig: RollupOptions = {
+    input: {
+      sw: './src/service-worker/sw.ts',
+    },
+    output: {
+      dir: DIST,
+      format: 'cjs',
+      entryFileNames: `[name]-[hash].js`,
+      sourcemap: isDev ? 'inline' : true,
+    },
+
+    plugins: [
+      alias(),
+
+      replace(),
+      smartReplace({
+        entries: [
+          [
+            'process.env.APP_MANIFEST',
+            ctx => {
+              ctx.addWatchFile(DIST + `/${APP_MANIFEST_NAME}`)
+              return fsp.readFile(DIST + `/${APP_MANIFEST_NAME}`).then(b => b.toString())
+            },
+          ],
+        ],
+      }),
+
+      smartDelete({ dir: DIST }),
+
+      ts(),
+      cjs(),
+
+      isProd && terser(),
+
+      manifesto({
+        fileName: SW_MANIFEST_NAME,
+      }),
+    ],
   }
 
   return [appConfig, swConfig]

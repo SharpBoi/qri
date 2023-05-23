@@ -33,7 +33,7 @@ async function checkSWneedUpdate(swMan: Manifest) {
   try {
     const currentSWfileName = await getSWFileName()
 
-    const actualSWfileName = swMan.chunks['sw-sw'][0]
+    const actualSWfileName = swMan.chunks['sw'][0]
 
     return currentSWfileName !== actualSWfileName
   } catch {
@@ -48,7 +48,7 @@ async function swFlow(swMan: Manifest) {
   console.log({ swNeedUpdate })
 
   if (swNeedUpdate || !hasSW) {
-    await registerSW(swMan.chunks['sw-sw'][0])
+    await registerSW(swMan.chunks['sw'][0])
     window.location.reload()
   }
 }
@@ -74,7 +74,7 @@ async function appFlow(appMan: Manifest) {
 }
 
 async function main() {
-  console.log('Loader v 1')
+  console.log('Loader v 3')
 
   const [appMan, swMan] = await Promise.all([loadAppManifest(), loadSWManifest()])
 

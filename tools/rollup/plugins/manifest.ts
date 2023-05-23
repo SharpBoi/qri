@@ -3,9 +3,6 @@ import { Plugin } from 'rollup'
 
 export type Manifest = {
   files: string[]
-  routes: {
-    [file: string]: string[]
-  }
   chunks: {
     [name: string]: string[]
   }
@@ -15,18 +12,17 @@ type ManifestoProps = {
   /** @default 'manifest.json' */
   fileName?: string
 
-  append?: Partial<Manifest>
+  onWrite?: (m: Manifest) => void
 }
 
 export function manifesto(props?: ManifestoProps): Plugin {
-  const { fileName = 'manifest.json', append = {} } = props || {}
+  const { fileName = 'manifest.json', onWrite } = props || {}
 
   return {
     name: 'my-manifest',
     async writeBundle(ops, bundle) {
       const manifest: Manifest = {
-        files: append.files || [],
-        routes: append.routes || {},
+        files: [],
         chunks: {},
       }
 
@@ -40,6 +36,8 @@ export function manifesto(props?: ManifestoProps): Plugin {
 
           manifest.chunks[name] = [...content, b.fileName]
         })
+
+      onWrite?.(manifest)
 
       await fs.writeFile(`${ops.dir}/${fileName}`, JSON.stringify(manifest, null, 2))
     },

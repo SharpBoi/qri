@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { OutputAsset, OutputChunk } from 'rollup'
+import { MaybePromise, OutputAsset, OutputChunk } from 'rollup'
 import * as util from 'util'
 
 function log(...params: any[]) {
@@ -19,7 +19,7 @@ type ScriptLoad = 'defer' | 'async' | 'regular'
 
 type HtmlGeneratorProps = {
   template?: string
-  inline?: Promise<string>[]
+  inline?: MaybePromise<string | false>[]
   chunks?: {
     load?: ScriptLoad
 
@@ -91,7 +91,7 @@ export function htmlGenerator(props?: HtmlGeneratorProps): import('rollup').Plug
       )
 
       const inlines = await Promise.all(props?.inline || [])
-      html = html.replace('${inline}', inlines.join('\n'))
+      html = html.replace('${inline}', inlines.filter(i => !!i).join('\n'))
 
       this.emitFile({
         type: 'asset',

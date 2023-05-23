@@ -8,7 +8,7 @@
     "target": "es5",
     "module": "esnext",
     "jsx": "react-jsx",
-    "lib": ["WebWorker", "DOM"],
+    "lib": ["WebWorker", "DOM", "ES2021"],
     
     "sourceMap": true,
     // "outDir": "dist",
