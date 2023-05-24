@@ -1,12 +1,18 @@
 {
   "name": "QRI",
   "short_name": "QRI",
+  "description": "A PWA QR code scanner with history, camera and file scanning. Performant and have no ability to acces your data !",
+  "categories": ["utilities", "navigation", "photo & video"],
+
   "theme_color": "#fff",
   "background_color": "#fff",
+
   "display": "fullScreen",
   "orientation": "portrait",
+
   "scope": "/",
   "start_url": "/",
+  
   "icons": [
     {
       "src": "images/icons/icon-72x72.png",

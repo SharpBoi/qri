@@ -6,6 +6,10 @@ import { App } from './App'
 
 export {}
 
+window.addEventListener('beforeinstallprompt', e => {
+  console.log('BEFORE INSTALL', e)
+})
+
 // Because QrScanner kills all MedaStream`s that needed for my WebCam
 // when blur window
 document.addEventListener('visibilitychange', e => {
