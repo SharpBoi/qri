@@ -30,7 +30,7 @@ export class WebCam {
 
   @observable.ref public $stream?: MediaStream
   @observable.ref public $video?: HTMLVideoElement
-  @observable.ref public $capabilities?: MediaTrackCapabilities
+  @observable.ref public $capabilities?: MediaTrackSettings
 
   @observable.ref private $track?: MediaStreamTrack | null
   @observable private $props: CamProps = {}
@@ -38,17 +38,6 @@ export class WebCam {
   constructor(props?: CamProps) {
     this.$props = props || {}
     makeObservable(this)
-
-    reaction(
-      () => this.$track,
-      track => {
-        if (!track) return
-
-        console.re.log('getConstraints', track.getConstraints?.())
-        console.re.log('getSettings', track.getSettings?.())
-        console.re.log('getCapabilities', track.getCapabilities?.())
-      }
-    )
 
     this.applySizeRX()
   }
@@ -154,7 +143,7 @@ export class WebCam {
 
     this.$track = this.$stream.getVideoTracks()[0]
 
-    this.$capabilities = this.$track.getCapabilities()
+    this.$capabilities = this.$track.getSettings()
 
     await this.normalizeSize()
 
