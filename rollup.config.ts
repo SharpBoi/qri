@@ -4,7 +4,7 @@ import { babel } from '@rollup/plugin-babel'
 import cjsPlugin from '@rollup/plugin-commonjs'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { terser as terserPlugin } from 'rollup-plugin-terser'
-import serve from 'rollup-plugin-serve'
+import serve, { RollupServeOptions } from 'rollup-plugin-serve'
 import livereload from 'rollup-plugin-livereload'
 import replacePlugin from '@rollup/plugin-replace'
 import * as os from 'os'
@@ -30,9 +30,9 @@ const REQUIREJS_PATH = 'require.js'
 
 const APP_FMT = 'esm' as ModuleFormat
 
-const https = {
-  key: fs.readFileSync('./tools/https/key.pem'),
-  cert: fs.readFileSync('./tools/https/cert.pem'),
+const https: RollupServeOptions['https'] = {
+  key: fs.readFileSync('localhost.key').toString(),
+  cert: fs.readFileSync('localhost.crt').toString(),
 }
 
 const isDev = process.env.NODE_ENV === 'development'
