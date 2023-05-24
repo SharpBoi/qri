@@ -2,6 +2,7 @@ import { SWMessage } from './types'
 
 export const selfSW = self as any as ServiceWorkerGlobalScope
 
+export const OK = 200
 export const APP_CACHE_NAME = 'app-cache:1'
 
 export const open = (name: string) => selfSW.caches.open(name)
@@ -11,7 +12,7 @@ const STORE_PREFIX = '@@-STORE-'
 // FETCHES
 
 export async function safeFetch(url: RequestInfo | URL, timeout = 0) {
-  return new Promise<string | undefined>(res => {
+  return new Promise<Response | undefined>(res => {
     const abort = new AbortController()
 
     if (timeout > 0) {
@@ -23,30 +24,37 @@ export async function safeFetch(url: RequestInfo | URL, timeout = 0) {
     }
 
     fetch(url, { signal: abort.signal })
-      .then(res => res.text())
       .then(res)
       .catch(() => res(undefined))
   })
 }
 
-export async function netFirst(req: RequestInfo | URL, cacheNetResponse = false) {
+export async function netFirst(req: RequestInfo | URL, cacheResponse = false) {
   const cac = await open(APP_CACHE_NAME)
   const cacheResp = await cac.match(req)
   const netResp = await fetch(req).catch(() => undefined)
 
-  if (netResp && cacheNetResponse) cac.put(req, netResp.clone())
+  if (netResp?.status === OK && cacheResponse) {
+    await cac.put(req, netResp.clone())
+    return netResp
+  }
 
-  return netResp || cacheResp || new Response(undefined, { status: 404 })
+  return cacheResp
 }
 
-export async function cacheFirst(req: RequestInfo | URL) {
+export async function cacheFirst(req: RequestInfo | URL, cacheResponse = false) {
   const cache = await open(APP_CACHE_NAME)
 
-  const res = await cache.match(req)
-
+  let res = await cache.match(req)
   if (res) return res
 
-  return fetch(req)
+  res = await fetch(req)
+
+  if (res.status === OK && cacheResponse) {
+    await cache.put(req, res.clone())
+  }
+
+  return res
 }
 
 // SW

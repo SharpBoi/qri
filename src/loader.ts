@@ -1,4 +1,4 @@
-import { Manifest } from 'tools/rollup/plugins/manifest'
+import { Manifesto } from 'tools/rollup/plugins/manifest'
 import {
   getSW,
   swListenMessage,
@@ -20,11 +20,11 @@ function loadApp() {
 
 function loadSWManifest() {
   return safeFetch('manifest.sw.json', MAX_FETCH_TIME)
-    .then(r => JSON.parse(r || '') as Manifest)
-    .catch(() => undefined)
+    .then(r => r?.json())
+    .then(j => j as Manifesto | undefined)
 }
 
-async function checkSWneedUpdate(swMan: Manifest) {
+async function checkSWneedUpdate(swMan: Manifesto) {
   try {
     const currentSWfileName = await getSWFileName()
 
@@ -36,7 +36,7 @@ async function checkSWneedUpdate(swMan: Manifest) {
   }
 }
 
-async function swFlow(swMan: Manifest) {
+async function swFlow(swMan: Manifesto) {
   const swNeedUpdate = await checkSWneedUpdate(swMan)
   const hasSW = !!(await getSW())
 

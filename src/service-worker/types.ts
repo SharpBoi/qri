@@ -1,8 +1,8 @@
-import { Manifest } from 'tools/rollup/plugins/manifest'
+import { Manifesto } from 'tools/rollup/plugins/manifest'
 
 export type SWCheckUpdate = {
   type: 'check-update'
-  appManifest: Manifest
+  appManifest: Manifesto
 }
 export type SWUpdateResult = {
   type: 'update-result'
