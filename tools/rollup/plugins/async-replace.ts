@@ -12,7 +12,7 @@ type Entry = [
   getValue: (ctx: TransformPluginContext) => MaybePromise<string>
 ]
 
-type SmartReplaceProps = {
+type AsyncReplaceProps = {
   entries: Entry[]
 }
 
@@ -26,11 +26,11 @@ async function replace(src: string, entries: Entry[], ctx: TransformPluginContex
   return src
 }
 
-export function smartReplace(props?: SmartReplaceProps): Plugin {
+export function asyncReplace(props?: AsyncReplaceProps): Plugin {
   const {} = props || {}
 
   return {
-    name: 'my-smart-replace',
+    name: 'my-async-replace',
     async transform(code, id) {
       return replace(code, props?.entries || [], this)
     },

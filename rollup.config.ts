@@ -1,4 +1,4 @@
-import { InputOption, ModuleFormat, RollupOptions, defineConfig } from 'rollup'
+import { InputOption, ModuleFormat, RollupOptions, defineConfig, rollup } from 'rollup'
 import tsPlugin from '@rollup/plugin-typescript'
 import { babel } from '@rollup/plugin-babel'
 import cjsPlugin from '@rollup/plugin-commonjs'
@@ -18,7 +18,7 @@ import { Manifesto, manifesto } from './tools/rollup/plugins/manifest'
 import { htmlGenerator } from './tools/rollup/plugins/html'
 import { smartDelete } from './tools/rollup/plugins/smart-delete'
 import copyPlugin from 'rollup-plugin-copy'
-import { smartReplace } from './tools/rollup/plugins/smart-replace'
+import { asyncReplace } from './tools/rollup/plugins/async-replace'
 
 const PORT = 10001
 const LOCAL_IP = os.networkInterfaces().en0?.[1].address
@@ -65,6 +65,50 @@ const terser = () =>
 
 export default defineConfig(async () => {
   console.warn(`!!! you can also run at https://${LOCAL_IP}:${PORT}`)
+
+  // sw config must define first, cuz of rollup bug
+  const swConfig: RollupOptions = {
+    input: {
+      sw: './src/service-worker/sw.ts',
+    },
+    output: {
+      dir: DIST,
+      format: 'cjs',
+      entryFileNames: `[name]-[hash].js`,
+      sourcemap: isDev ? 'inline' : true,
+    },
+
+    plugins: [
+      alias(),
+
+      replace(),
+
+      asyncReplace({
+        entries: [
+          [
+            'process.env.APP_MANIFEST',
+            ctx => {
+              // rollup bug
+              // ctx.addWatchFile(DIST + `/${APP_MANIFEST_NAME}`)
+              // ctx.addWatchFile(DIST + `/${APP_MANIFEST_NAME}`)
+              return fsp.readFile(DIST + `/${APP_MANIFEST_NAME}`).then(b => b.toString())
+            },
+          ],
+        ],
+      }),
+
+      smartDelete({ dir: DIST }),
+
+      ts(),
+      cjs(),
+
+      isProd && terser(),
+
+      manifesto({
+        fileName: SW_MANIFEST_NAME,
+      }),
+    ],
+  }
 
   const input: InputOption = {
     main: './src/main.tsx',
@@ -164,46 +208,6 @@ export default defineConfig(async () => {
     watch: {
       clearScreen: false,
     },
-  }
-
-  const swConfig: RollupOptions = {
-    input: {
-      sw: './src/service-worker/sw.ts',
-    },
-    output: {
-      dir: DIST,
-      format: 'cjs',
-      entryFileNames: `[name]-[hash].js`,
-      sourcemap: isDev ? 'inline' : true,
-    },
-
-    plugins: [
-      alias(),
-
-      replace(),
-      smartReplace({
-        entries: [
-          [
-            'process.env.APP_MANIFEST',
-            ctx => {
-              ctx.addWatchFile(DIST + `/${APP_MANIFEST_NAME}`)
-              return fsp.readFile(DIST + `/${APP_MANIFEST_NAME}`).then(b => b.toString())
-            },
-          ],
-        ],
-      }),
-
-      smartDelete({ dir: DIST }),
-
-      ts(),
-      cjs(),
-
-      isProd && terser(),
-
-      manifesto({
-        fileName: SW_MANIFEST_NAME,
-      }),
-    ],
   }
 
   return [appConfig, swConfig]
