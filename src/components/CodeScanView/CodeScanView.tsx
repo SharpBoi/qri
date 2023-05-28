@@ -11,6 +11,7 @@ import { WebcamDropdownList } from '../_dropdowns/WebcamDropdownList'
 import { openFileDialog } from '@/util/file-dialog'
 import FolderSVG from '@/assets/folder.svg'
 import HistorySVG from '@/assets/history.svg'
+import InstallSVG from '@/assets/install.svg'
 import { useNavigate } from 'react-router'
 import { PATHS } from '@/routing/paths'
 import { Link } from 'react-router-dom'
@@ -18,6 +19,7 @@ import { BarcodeScan } from '@/classes/BarcodeScan'
 import { historyStore } from '@/store/history'
 import { settingsStore } from '@/store/settings'
 import { useMount, useUnmount } from '@/hooks/useMount'
+import { installStore } from '@/store/install'
 
 export type CodeScanViewProps = {}
 export const CodeScanView = observer(({}: CodeScanViewProps) => {
@@ -82,6 +84,8 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
     })
   }
 
+  // console.log('SW II', installStore.isInstallable)
+
   return (
     <div className={style.code_scan_box}>
       <div className={style.video_box}>
@@ -91,6 +95,16 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
       </div>
 
       <CornersFrame />
+
+      <div className={style.top_controls}>
+        {installStore.isInstallable ? (
+          <Button onClick={() => installStore.askInstallPWA()}>
+            <InstallSVG />
+          </Button>
+        ) : (
+          <div />
+        )}
+      </div>
 
       <div className={style.controls}>
         <Button onClick={() => cam.turnOnLight()} className={style.flash}>

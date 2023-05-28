@@ -31,7 +31,10 @@ class HistoryStore {
       ...this.$history,
       [newKey]: {
         date: new Date().toISOString(),
-        result,
+        result: {
+          cornerPoints: result.cornerPoints,
+          data: result.data,
+        },
       },
     }
 

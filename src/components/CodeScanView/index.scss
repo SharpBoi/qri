@@ -57,3 +57,17 @@
     grid-area: C;
   }
 }
+
+.top_controls {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  top: 25px;
+
+  display: flex;
+  flex-flow: row nowrap;
+  flex-direction: row-reverse;
+
+  margin: 0 25px;
+}
