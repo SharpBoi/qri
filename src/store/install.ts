@@ -1,3 +1,4 @@
+import { getInstalledRelatedApps } from '@/util/getInstalledRelatedApps'
 import { computed, makeObservable, observable } from 'mobx'
 
 /**
@@ -31,13 +32,17 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 class InstallStore {
+  @observable public $isInstalled?: boolean
+
   @observable.ref private $event: BeforeInstallPromptEvent | null = null
 
   constructor() {
     makeObservable(this)
+
+    getInstalledRelatedApps().then(apps => (this.$isInstalled = apps && apps.length > 0))
   }
 
-  @computed public get isInstallable() {
+  @computed public get $isInstallable() {
     return !!this.$event
   }
 

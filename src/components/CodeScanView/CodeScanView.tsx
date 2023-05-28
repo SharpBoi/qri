@@ -84,7 +84,7 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
     })
   }
 
-  // console.log('SW II', installStore.isInstallable)
+  const showInstall = installStore.$isInstallable && installStore.$isInstalled === false
 
   return (
     <div className={style.code_scan_box}>
@@ -97,7 +97,7 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
       <CornersFrame />
 
       <div className={style.top_controls}>
-        {installStore.isInstallable ? (
+        {showInstall ? (
           <Button onClick={() => installStore.askInstallPWA()}>
             <InstallSVG />
           </Button>
