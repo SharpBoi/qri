@@ -3,7 +3,7 @@ import tsPlugin from '@rollup/plugin-typescript'
 import { babel } from '@rollup/plugin-babel'
 import cjsPlugin from '@rollup/plugin-commonjs'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import { terser as terserPlugin } from 'rollup-plugin-terser'
+import terserPlugin from '@rollup/plugin-terser'
 import serve, { RollupServeOptions } from 'rollup-plugin-serve'
 import livereload from 'rollup-plugin-livereload'
 import replacePlugin from '@rollup/plugin-replace'
@@ -30,10 +30,10 @@ const REQUIREJS_PATH = 'require.js'
 
 const APP_FMT = 'esm' as ModuleFormat
 
-const https: RollupServeOptions['https'] = {
+const https = (): RollupServeOptions['https'] => ({
   key: fs.readFileSync('localhost.key').toString(),
   cert: fs.readFileSync('localhost.crt').toString(),
-}
+})
 
 const isDev = process.env.NODE_ENV === 'development'
 const isProd = !isDev
@@ -194,14 +194,14 @@ export default defineConfig(async () => {
           contentBase: DIST,
           // host: LOCAL_IP,
           port: PORT,
-          https,
+          https: https(),
           historyApiFallback: true,
         }),
       isDev &&
         livereload({
           watch: DIST,
           port: PORT,
-          https,
+          https: https(),
         }),
     ],
 
