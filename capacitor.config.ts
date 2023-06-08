@@ -1,12 +1,13 @@
-import { CapacitorConfig } from '@capacitor/cli';
+import { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
   appId: 'com.moxx.qri',
   appName: 'qri',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
-  }
-};
+    androidScheme: 'https',
+    hostname: 'localhost',
+  },
+}
 
-export default config;
+export default config
