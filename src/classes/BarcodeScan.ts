@@ -1,7 +1,7 @@
+import QrScanner from '@/modules/qr-scanner/src/qr-scanner'
 import { ImgScanResult } from '@/types/img-scan-result'
 import { screenshotVideo } from '@/util/video'
 import { action, makeObservable, observable } from 'mobx'
-import QrScanner from 'qr-scanner'
 
 function createVideo() {
   const video = document.createElement('video')
