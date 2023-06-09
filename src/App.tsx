@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import { observer } from 'mobx-react-lite'
 import { CodeScanView } from './components/CodeScanView/CodeScanView'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
@@ -10,8 +9,6 @@ import { HistoryView } from './components/HistoryView/HistoryView'
 screen.orientation.lock('portrait')
 
 export const App = observer(() => {
-  useEffect(() => {}, [])
-
   return (
     <>
       <BrowserRouter>

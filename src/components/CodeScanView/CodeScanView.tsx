@@ -39,6 +39,10 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
     if ($settings.camId) cam.start($settings.camId)
     else cam.startDefault()
   })
+  useUnmount(() => {
+    scan.stop()
+    cam.stop()
+  })
 
   // Start scan
   useEffect(() => {
@@ -51,7 +55,8 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
 
   // Scan detected
   useEffect(() => {
-    if (!scan.$result) return
+    // TODO notify that scanned code is empty
+    if (!scan.$result?.data) return
 
     scan.stop()
 
@@ -60,12 +65,7 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
     nav(PATHS.scanResult, {
       state: scan.$result,
     })
-  }, [scan.$result])
-
-  useUnmount(() => {
-    scan.stop()
-    cam.stop()
-  })
+  }, [scan.$result?.data])
 
   function handleCamSelect(id: string) {
     cam.stop()
