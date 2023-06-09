@@ -7,7 +7,7 @@
     "start": "export NODE_ENV=development; npm run rlp -- -c -w",
     "build": "export NODE_ENV=production; npm run rlp -- -c",
     "build:web": "npm run build",
-    "build:android": "npm run build && npx cap sync"
+    "build:android": "npm run build && npx cap sync && cd ./android && ./gradlew assembleDebug"
   },
   "author": "",
   "license": "ISC",
