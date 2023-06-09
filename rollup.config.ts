@@ -26,8 +26,6 @@ const DIST = './dist'
 const APP_MANIFEST_NAME = 'manifest.app.json'
 const SW_MANIFEST_NAME = 'manifest.sw.json'
 
-const REQUIREJS_PATH = 'require.js'
-
 const APP_FMT = 'esm' as ModuleFormat
 
 const https = (): RollupServeOptions['https'] => ({
@@ -110,14 +108,10 @@ export default defineConfig(async () => {
     ],
   }
 
-  const input: InputOption = {
-    main: './src/main.tsx',
-    loader: './src/loader.ts',
-  }
-  if (APP_FMT === 'amd') input.requirejs = './src/assets/js/require.js'
-
   const appConfig: RollupOptions = {
-    input,
+    input: {
+      loader: './src/loader.ts',
+    },
     output: {
       dir: DIST,
       format: APP_FMT,
@@ -174,7 +168,7 @@ export default defineConfig(async () => {
 
       htmlGenerator({
         template: 'src/index.html',
-        inline: [APP_FMT === 'amd' && `<script src="${REQUIREJS_PATH}"></script>`],
+        inline: () => [APP_FMT === 'amd' && `<script src="require.js"></script>`],
         chunks: {
           load: 'defer',
           entries: {
@@ -187,7 +181,14 @@ export default defineConfig(async () => {
         targets: [{ src: 'public/*', dest: DIST }],
       }),
 
-      manifesto({ fileName: APP_MANIFEST_NAME }),
+      manifesto({
+        fileName: APP_MANIFEST_NAME,
+        append() {
+          return {
+            files: ['require.js'],
+          }
+        },
+      }),
 
       isDev &&
         serve({

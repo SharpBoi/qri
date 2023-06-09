@@ -19,7 +19,10 @@ type ScriptLoad = 'defer' | 'async' | 'regular'
 
 type HtmlGeneratorProps = {
   template?: string
-  inline?: MaybePromise<string | false>[]
+  inline?: (
+    chunks: OutputChunk[],
+    assets: OutputAsset[]
+  ) => MaybePromise<string | false>[]
   chunks?: {
     load?: ScriptLoad
 
@@ -90,7 +93,7 @@ export function htmlGenerator(props?: HtmlGeneratorProps): import('rollup').Plug
         styles.map(s => `<link rel="stylesheet" href="${s.fileName}" />`).join('\n')
       )
 
-      const inlines = await Promise.all(props?.inline || [])
+      const inlines = await Promise.all(props?.inline?.(bundleChunks, bundleAssets) || [])
       html = html.replace('${inline}', inlines.filter(i => !!i).join('\n'))
 
       this.emitFile({
