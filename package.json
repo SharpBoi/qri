@@ -5,7 +5,9 @@
   "scripts": {
     "rlp": "rollup --bundleConfigAsCjs --configPlugin @rollup/plugin-typescript",
     "start": "export NODE_ENV=development; npm run rlp -- -c -w",
-    "build": "export NODE_ENV=production; npm run rlp -- -c"
+    "build": "export NODE_ENV=production; npm run rlp -- -c",
+    "build:web": "npm run build",
+    "build:android": "npm run build && npx cap sync"
   },
   "author": "",
   "license": "ISC",
@@ -37,6 +39,7 @@
   },
   "dependencies": {
     "@capacitor/android": "^5.0.4",
+    "@capacitor/app": "^5.0.3",
     "@capacitor/core": "^5.0.4",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",

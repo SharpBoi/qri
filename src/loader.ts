@@ -1,12 +1,6 @@
 import { Manifesto } from 'tools/rollup/plugins/manifest'
-import {
-  getSW,
-  swListenMessage,
-  swPostMessage,
-  safeFetch,
-  registerSW,
-  getSWFileName,
-} from './service-worker/sw-util'
+import { getSW, safeFetch, registerSW, getSWFileName } from './service-worker/sw-util'
+import { Capacitor } from '@capacitor/core'
 
 export {}
 
@@ -51,11 +45,15 @@ async function swFlow(swMan: Manifesto) {
 async function main() {
   console.log('Loader v 6')
 
-  const swMan = await loadSWManifest()
+  console.log(Capacitor.getPlatform())
 
-  console.log({ swMan })
+  if (Capacitor.getPlatform() === 'web') {
+    const swMan = await loadSWManifest()
 
-  if (swMan) await swFlow(swMan)
+    console.log({ swMan })
+
+    if (swMan) await swFlow(swMan)
+  }
 
   await loadApp()
 }
