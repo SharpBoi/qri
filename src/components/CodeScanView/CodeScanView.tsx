@@ -36,8 +36,7 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
   useMount(() => {
     cam.stop()
 
-    if ($settings.camId) cam.start($settings.camId)
-    else cam.startDefault()
+    cam.start($settings.camId)
   })
   useUnmount(() => {
     scan.stop()
