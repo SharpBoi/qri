@@ -1,15 +1,5 @@
 import { detectFacingMode, FacingMode } from '@/types/facing'
-import { Orientation, $orientation } from '@/store/orientation'
-import isMobile from 'is-mobile'
-import {
-  action,
-  autorun,
-  computed,
-  makeObservable,
-  observable,
-  reaction,
-  trace,
-} from 'mobx'
+import { action, autorun, computed, makeObservable, observable } from 'mobx'
 
 export type CamProps = {
   width?: number

@@ -4,8 +4,6 @@ import { Capacitor } from '@capacitor/core'
 
 export {}
 
-const sw = navigator.serviceWorker
-
 const MAX_FETCH_TIME = 700
 
 function loadApp() {
@@ -43,14 +41,10 @@ async function swFlow(swMan: Manifesto) {
 }
 
 async function main() {
-  console.log('Loader v 6')
-
-  console.log(Capacitor.getPlatform())
+  console.log('Loader v 7')
 
   if (Capacitor.getPlatform() === 'web') {
     const swMan = await loadSWManifest()
-
-    console.log({ swMan })
 
     if (swMan) await swFlow(swMan)
   }

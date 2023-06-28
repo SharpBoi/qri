@@ -1,5 +1,4 @@
 import { ReadableVar, WritableVar } from '@/classes/RxVar'
-import { autorun, reaction } from 'mobx'
 
 export enum Orientation {
   landscape = 'landscape',
