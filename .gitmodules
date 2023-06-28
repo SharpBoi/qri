@@ -1,3 +1,4 @@
 [submodule "src/modules/qr-scanner"]
 	path = src/modules/qr-scanner
 	url = git@github.com:SharpBoi/qr-scanner--qri.git
+	branch = master
