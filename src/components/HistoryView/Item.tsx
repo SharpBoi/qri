@@ -25,20 +25,20 @@ export const Item = memo(({ data }: Props) => {
     .replace(',', ' ')
 
   function handleClick() {
-    openLinkOrText(data.result.data)
+    openLinkOrText(data.result.text)
   }
 
   return (
     <div className={style.item} onClick={handleClick}>
-      <div>{data.result.data}</div>
+      <div>{data.result.text}</div>
       <div className={style.controls}>
         <div className={style.date}>{date}</div>
 
-        <ShareButton data={data.result.data} />
+        <ShareButton data={data.result.text} />
         <Button>
           <EyeSVG />
         </Button>
-        <ClipboardButton data={data.result.data} />
+        <ClipboardButton data={data.result.text} />
       </div>
     </div>
   )

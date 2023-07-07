@@ -1,62 +1,50 @@
-import QrScanner from '@/modules/qr-scanner/src/qr-scanner'
-import { ImgScanResult } from '@/types/img-scan-result'
-import { screenshotVideo } from '@/util/video'
+import { ScanResult } from '@/types/img-scan-result'
+import { createVideo, screenshotVideo, videoFromStream } from '@/util/video'
+import { BrowserQRCodeReader, IScannerControls } from '@zxing/browser'
+import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 import { action, makeObservable, observable } from 'mobx'
 
-function createVideo() {
-  const video = document.createElement('video')
-  video.autoplay = true
-  video.muted = true
-  video.play()
-  return video
-}
+const HINTS = new Map([[DecodeHintType.POSSIBLE_FORMATS, BarcodeFormat.QR_CODE]])
 
 export class BarcodeScan {
-  @observable.ref public $result?: ImgScanResult
+  @observable.ref public $result?: ScanResult
 
-  private qr?: QrScanner
+  private decoder?: IScannerControls
+  private video?: HTMLVideoElement
 
   constructor() {
     makeObservable(this)
+  }
+
+  public async scanImage(imgUrl: string) {
+    const reader = new BrowserQRCodeReader(HINTS)
+
+    const r = await reader.decodeFromImageUrl(imgUrl)
+
+    return r.getText()
   }
 
   @action
   public async start(videoStream: MediaStream) {
     this.$result = undefined
 
-    const video = createVideo()
-    video.srcObject = videoStream
+    this.video = videoFromStream(videoStream)
 
-    this.qr = new QrScanner(
-      video,
-      result => {
-        this.$result = {
-          ...result,
-          imgUrl: screenshotVideo(video),
-        }
-      },
-      {
-        returnDetailedScanResult: true,
-        calculateScanRegion(video) {
-          return {
-            x: 0,
-            y: 0,
-            width: video.videoWidth,
-            height: video.videoHeight,
-          }
-        },
+    const reader = new BrowserQRCodeReader(HINTS)
+
+    this.decoder = await reader.decodeFromStream(videoStream, undefined, async result => {
+      if (!result) return (this.$result = undefined)
+
+      this.$result = {
+        text: result.getText(),
+        imgUrl: await screenshotVideo(this.video!),
       }
-    )
-
-    await this.qr.start()
+    })
   }
 
   public stop() {
-    // order is correct
-    this.qr?.$video && (this.qr.$video.srcObject = null)
-    this.qr?.$video.remove()
-
-    this.qr?.stop()
-    this.qr?.destroy()
+    this.decoder?.stop()
+    this.video && (this.video.srcObject = null)
+    this.video?.remove()
   }
 }

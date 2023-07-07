@@ -1,11 +1,13 @@
+import { ScanResult } from '@/types/img-scan-result'
 import { readLocalStorage, writeLocalStorage } from '@/util/local-storage'
 import { action, makeObservable, observable } from 'mobx'
-import type QrScanner from 'qr-scanner'
 
 const HISTORY_KEY = 'history'
 
 export type HistoryItem = {
-  result: QrScanner.ScanResult
+  result: {
+    text: string
+  }
   date: string
 }
 
@@ -22,7 +24,7 @@ class HistoryStore {
     this.$history = readLocalStorage(HISTORY_KEY) || {}
   }
 
-  @action public add(result: QrScanner.ScanResult) {
+  @action public add(result: ScanResult) {
     const lastKey = Object.keys(this.$history).map(Number).sort().at(-1) || 0
 
     const newKey = lastKey + 1
@@ -32,8 +34,7 @@ class HistoryStore {
       [newKey]: {
         date: new Date().toISOString(),
         result: {
-          cornerPoints: result.cornerPoints,
-          data: result.data,
+          text: result.text,
         },
       },
     }

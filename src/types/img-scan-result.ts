@@ -1,5 +1,4 @@
-import type QrScanner from 'qr-scanner'
-
-export type ImgScanResult = QrScanner.ScanResult & {
+export type ScanResult = {
   imgUrl: string
+  text: string
 }

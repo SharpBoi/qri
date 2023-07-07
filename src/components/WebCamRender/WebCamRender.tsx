@@ -24,6 +24,7 @@ export const WebCamRender = observer(
     useEffect(() => {
       const video = ref.current
       if (!video) return
+      if (!cam.$stream) return
 
       video.srcObject = cam.$stream || null
 

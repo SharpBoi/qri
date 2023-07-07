@@ -1,20 +1,20 @@
 import { fileToDataurl } from '@/util/file-dataurl'
-import QrScanner from 'qr-scanner'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useNavigation } from 'react-router'
 import { Button } from '../_uikit/Button'
 import style from './index.scss'
 import { PATHS } from '@/routing/paths'
-import { ImgScanResult } from '@/types/img-scan-result'
+import { ScanResult } from '@/types/img-scan-result'
 import { historyStore } from '@/store/history'
 import { observer } from 'mobx-react-lite'
+import { BarcodeScan } from '@/classes/BarcodeScan'
 
 export const ImageScanView = observer(() => {
   const loc = useLocation()
   const nav = useNavigate()
 
   const [url, setUrl] = useState('')
-  const [scan, setScan] = useState<QrScanner.ScanResult | 'err' | null>(null)
+  const [scan, setScan] = useState<ScanResult | null | 'err'>(null)
 
   const file = loc.state
 
@@ -29,17 +29,18 @@ export const ImageScanView = observer(() => {
       setUrl(url)
 
       try {
-        const scan = await QrScanner.scanImage(file, { returnDetailedScanResult: true })
-        setScan(scan)
+        const scanner = new BarcodeScan()
 
-        historyStore.add(scan)
+        const result: ScanResult = {
+          text: await scanner.scanImage(url),
+          imgUrl: url,
+        }
+
+        historyStore.add(result)
 
         nav(PATHS.scanResult, {
           replace: true,
-          state: {
-            ...scan,
-            imgUrl: url,
-          } as ImgScanResult,
+          state: result,
         })
       } catch {
         setScan('err')
