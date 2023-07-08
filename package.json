@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "init": "git submodule update --init --recursive",
     "rlp": "rollup --bundleConfigAsCjs --configPlugin @rollup/plugin-typescript",
     "start": "export NODE_ENV=development; npm run rlp -- -c -w",
     "build": "export NODE_ENV=production; npm run rlp -- -c",
