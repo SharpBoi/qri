@@ -4,8 +4,11 @@ import { configure } from 'mobx'
 import ReactDOM from 'react-dom/client'
 import { App } from './App'
 import { installStore } from './store/install'
+import { handleBackButtonRouting } from './util/back-button'
 
 export {}
+
+handleBackButtonRouting()
 
 installStore.initPWAInstaller()
 

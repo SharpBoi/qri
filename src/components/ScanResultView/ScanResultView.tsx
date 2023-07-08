@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router'
 import { Button } from '../_uikit/Button'
 import style from './index.scss'
-import { ImgScanResult } from '@/types/img-scan-result'
+import { ScanResult } from '@/types/img-scan-result'
 import { RichText } from '../_uikit/RichText'
 import { BrowserButton } from '../_buttons/BrowserButton'
 import { ClipboardButton } from '../_buttons/ClipboardButton'
@@ -11,7 +11,7 @@ export function ScanResultView() {
   const loc = useLocation()
   const nav = useNavigate()
 
-  const result = loc.state as ImgScanResult
+  const result = loc.state as ScanResult
 
   return (
     <div className={style.view}>
@@ -19,12 +19,12 @@ export function ScanResultView() {
         <img src={result.imgUrl} />
       </div>
       <footer className={style.footer}>
-        <RichText maxHeight="75px" wide value={result.data}></RichText>
+        <RichText maxHeight="75px" wide value={result.text}></RichText>
 
         <div className={style.actions}>
-          <ShareButton data={result.data} />
-          <BrowserButton data={result.data} />
-          <ClipboardButton data={result.data} />
+          <ShareButton data={result.text} />
+          <BrowserButton data={result.text} />
+          <ClipboardButton data={result.text} />
         </div>
         <Button wide onClick={() => nav(-1)}>
           Back

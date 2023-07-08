@@ -21,12 +21,10 @@ import copyPlugin from 'rollup-plugin-copy'
 import { asyncReplace } from './tools/rollup/plugins/async-replace'
 
 const PORT = 10001
-const LOCAL_IP = os.networkInterfaces().en0?.[1].address
+const LOCAL_IP = os.networkInterfaces().en0?.[1].address || ''
 const DIST = './dist'
 const APP_MANIFEST_NAME = 'manifest.app.json'
 const SW_MANIFEST_NAME = 'manifest.sw.json'
-
-const REQUIREJS_PATH = 'require.js'
 
 const APP_FMT = 'esm' as ModuleFormat
 
@@ -61,6 +59,24 @@ const terser = () =>
     format: {
       comments: false,
     },
+  })
+
+const server = (host: string, port: number, secure: boolean) =>
+  isDev &&
+  serve({
+    contentBase: DIST,
+    host,
+    port,
+    https: secure ? https() : undefined,
+    historyApiFallback: true,
+  })
+
+const livereloader = (port: number, secure: boolean) =>
+  isDev &&
+  livereload({
+    watch: DIST,
+    port,
+    https: secure ? https() : undefined,
   })
 
 export default defineConfig(async () => {
@@ -110,14 +126,10 @@ export default defineConfig(async () => {
     ],
   }
 
-  const input: InputOption = {
-    main: './src/main.tsx',
-    loader: './src/loader.ts',
-  }
-  if (APP_FMT === 'amd') input.requirejs = './src/assets/js/require.js'
-
   const appConfig: RollupOptions = {
-    input,
+    input: {
+      loader: './src/loader.ts',
+    },
     output: {
       dir: DIST,
       format: APP_FMT,
@@ -174,7 +186,7 @@ export default defineConfig(async () => {
 
       htmlGenerator({
         template: 'src/index.html',
-        inline: [APP_FMT === 'amd' && `<script src="${REQUIREJS_PATH}"></script>`],
+        inline: () => [APP_FMT === 'amd' && `<script src="require.js"></script>`],
         chunks: {
           load: 'defer',
           entries: {
@@ -187,22 +199,23 @@ export default defineConfig(async () => {
         targets: [{ src: 'public/*', dest: DIST }],
       }),
 
-      manifesto({ fileName: APP_MANIFEST_NAME }),
+      manifesto({
+        fileName: APP_MANIFEST_NAME,
+        append() {
+          return {
+            files: ['require.js'],
+          }
+        },
+      }),
 
-      isDev &&
-        serve({
-          contentBase: DIST,
-          // host: LOCAL_IP,
-          port: PORT,
-          https: https(),
-          historyApiFallback: true,
-        }),
-      isDev &&
-        livereload({
-          watch: DIST,
-          port: PORT,
-          https: https(),
-        }),
+      server('localhost', PORT, false),
+      server('localhost', PORT + 1, true),
+
+      server(LOCAL_IP, PORT, false),
+      server(LOCAL_IP, PORT + 1, true),
+
+      livereloader(PORT, false),
+      livereloader(PORT + 1, true),
     ],
 
     watch: {

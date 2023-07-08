@@ -3,8 +3,12 @@ import { action, makeObservable, observable } from 'mobx'
 
 const SETTINGS_KEY = 'settings'
 
+type CamSettings = {
+  name: string
+}
+
 type Settings = {
-  camId?: string
+  camera?: CamSettings
 }
 
 class SettingsStore {

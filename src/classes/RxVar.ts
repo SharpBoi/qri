@@ -8,9 +8,8 @@ interface IWritableVar<T> extends IReadableVar<T> {
   set(value: T): void
 }
 
-export class WritableVar<T> implements IWritableVar<T> {
-  // @ts-ignore
-  @observable public $value: T = undefined
+export class WritableVar<T> implements IWritableVar<T | undefined> {
+  @observable public $value: T | undefined = undefined
 
   constructor(initial: T) {
     makeObservable(this)

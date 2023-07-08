@@ -7,8 +7,7 @@
   "theme_color": "#fff",
   "background_color": "#fff",
 
-  "//display": "standalone",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "portrait",
 
   "scope": "/",

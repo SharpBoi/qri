@@ -1,5 +1,4 @@
-import { EffectCallback, useEffect, useRef } from 'react'
-import { useFunc } from './useFunc'
+import { useEffect, useRef } from 'react'
 
 export function useMount(fn: VoidFunction) {
   useEffect(() => fn(), [])

@@ -1,6 +1,6 @@
 import { WebCam } from '@/classes/WebCam'
 import { observer } from 'mobx-react-lite'
-import { Suspense, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { WebCamRender } from '../WebCamRender/WebCamRender'
 import style from './index.scss'
 import { $orientation, Orientation } from '@/store/orientation'
@@ -36,8 +36,11 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
   useMount(() => {
     cam.stop()
 
-    if ($settings.camId) cam.start($settings.camId)
-    else cam.startDefault()
+    cam.start($settings.camera?.name)
+  })
+  useUnmount(() => {
+    scan.stop()
+    cam.stop()
   })
 
   // Start scan
@@ -53,6 +56,9 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
   useEffect(() => {
     if (!scan.$result) return
 
+    // TODO notify that scanned code is empty
+    if (scan.$result.text === '') return
+
     scan.stop()
 
     historyStore.add(scan.$result)
@@ -62,17 +68,12 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
     })
   }, [scan.$result])
 
-  useUnmount(() => {
-    scan.stop()
-    cam.stop()
-  })
-
-  function handleCamSelect(id: string) {
+  function handleCamSelect(name: string) {
     cam.stop()
 
-    settingsStore.set({ camId: id })
+    settingsStore.set({ camera: { name } })
 
-    cam.start(id)
+    cam.start(name)
   }
 
   async function handleFiles() {
@@ -113,10 +114,7 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
         <Button className={style.file} onClick={handleFiles}>
           <FolderSVG />
         </Button>
-        <WebcamDropdownList
-          selectId={cam.$capabilities?.deviceId}
-          onSelect={handleCamSelect}
-        />
+        <WebcamDropdownList selectId={cam.$deviceName} onSelect={handleCamSelect} />
         <Button className={style.settings}>
           <HistorySVG />
         </Button>

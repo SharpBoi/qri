@@ -1,16 +1,8 @@
 import { Manifesto } from 'tools/rollup/plugins/manifest'
-import {
-  getSW,
-  swListenMessage,
-  swPostMessage,
-  safeFetch,
-  registerSW,
-  getSWFileName,
-} from './service-worker/sw-util'
+import { getSW, safeFetch, registerSW, getSWFileName } from './service-worker/sw-util'
+import { Capacitor } from '@capacitor/core'
 
 export {}
-
-const sw = navigator.serviceWorker
 
 const MAX_FETCH_TIME = 700
 
@@ -49,13 +41,18 @@ async function swFlow(swMan: Manifesto) {
 }
 
 async function main() {
-  console.log('Loader v 6')
+  console.log('Loader v 7')
 
-  const swMan = await loadSWManifest()
+  const isHttps = window.location.protocol.startsWith('https')
+  const isWeb = Capacitor.getPlatform() === 'web'
 
-  console.log({ swMan })
+  const isSWAllowed = isWeb && isHttps
 
-  if (swMan) await swFlow(swMan)
+  if (isSWAllowed) {
+    const swMan = await loadSWManifest()
+
+    if (swMan) await swFlow(swMan)
+  }
 
   await loadApp()
 }

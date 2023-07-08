@@ -1,45 +1,24 @@
 import { detectFacingMode, FacingMode } from '@/types/facing'
-import { Orientation, $orientation } from '@/store/orientation'
-import isMobile from 'is-mobile'
-import {
-  action,
-  autorun,
-  computed,
-  makeObservable,
-  observable,
-  reaction,
-  trace,
-} from 'mobx'
+import { enumerateDevices, getDeviceById, getDeviceByName } from '@/util/device'
+import { action, autorun, computed, makeObservable, observable } from 'mobx'
 
-export type CamProps = {
-  width?: number
-  height?: number
-}
-
-const MAX_CAM_SIZE = 5000
+const MAX_CAM_WIDTH = window.innerWidth * 1.5
+const MAX_CAM_HEIGHT = window.innerHeight * 1.5
 
 export class WebCam {
   public static get supported() {
     return !!navigator?.mediaDevices?.getUserMedia
   }
 
-  public static async enumerate() {
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    return devices.filter(d => d.kind === 'videoinput')
-  }
-
   @observable.ref public $stream?: MediaStream
   @observable.ref public $video?: HTMLVideoElement
   @observable.ref public $capabilities?: MediaTrackSettings
+  @observable public $deviceName?: string
 
   @observable.ref private $track?: MediaStreamTrack | null
-  @observable private $props: CamProps = {}
 
-  constructor(props?: CamProps) {
-    this.$props = props || {}
+  constructor() {
     makeObservable(this)
-
-    this.applySizeRX()
   }
 
   @computed public get $flip() {
@@ -53,53 +32,33 @@ export class WebCam {
   }
 
   @action
-  public async start(deviceId: string) {
+  public async start(name?: string) {
+    const deviceId = await getDeviceByName(name || '').then(d => d?.deviceId)
+
+    const videoCfg: MediaTrackConstraints = {
+      frameRate: { ideal: 60 },
+      noiseSuppression: { ideal: true },
+      autoGainControl: { ideal: true },
+      zoom: 0,
+      width: { ideal: MAX_CAM_WIDTH },
+      height: { ideal: MAX_CAM_HEIGHT },
+    }
+
+    if (deviceId) {
+      videoCfg.deviceId = { ideal: deviceId }
+    } else {
+      videoCfg.facingMode = [FacingMode.environment]
+    }
+
     await this._start({
       audio: false,
-      video: {
-        deviceId: { exact: deviceId },
-        frameRate: { ideal: 60 },
-        noiseSuppression: { ideal: true },
-        autoGainControl: { ideal: true },
-        zoom: 0,
-        width: { ideal: MAX_CAM_SIZE },
-        height: { ideal: MAX_CAM_SIZE },
-      },
-    })
-  }
-
-  @action
-  public async startDefault() {
-    await this._start({
-      audio: false,
-      video: {
-        facingMode: [FacingMode.environment],
-        frameRate: { ideal: 60 },
-        noiseSuppression: { ideal: true },
-        autoGainControl: { ideal: true },
-        zoom: 0,
-        width: { ideal: MAX_CAM_SIZE },
-        height: { ideal: MAX_CAM_SIZE },
-
-        torch: true,
-        advanced: [
-          {
-            torch: true,
-          },
-        ],
-      },
+      video: videoCfg,
     })
   }
 
   public stop() {
     this.$track?.stop()
     this.$stream?.stop?.()
-  }
-
-  @action
-  public setSize({ width, height }: Pick<CamProps, 'width' | 'height'>) {
-    this.$props.width = width
-    this.$props.height = height
   }
 
   /** @deprecated */
@@ -116,7 +75,7 @@ export class WebCam {
     //   },
     // })
 
-    const devices = await WebCam.enumerate()
+    const devices = await enumerateDevices()
     const last = devices.at(-1)
 
     const media = await navigator.mediaDevices.getUserMedia({
@@ -145,6 +104,10 @@ export class WebCam {
 
     this.$capabilities = this.$track.getSettings()
 
+    this.$deviceName = await getDeviceById(this.$capabilities.deviceId || '').then(
+      d => d?.label
+    )
+
     await this.normalizeSize()
 
     this.$video = document.createElement('video')
@@ -153,19 +116,6 @@ export class WebCam {
     this.$video.playsInline = true
     this.$video.controls = false
     this.$video.srcObject = this.$stream
-  }
-
-  private applySizeRX() {
-    autorun(() => {
-      if (!this.$track) return
-
-      const { height, width } = this.$props
-
-      this.$track.applyConstraints({
-        width,
-        height,
-      })
-    })
   }
 
   private async normalizeSize() {
