@@ -43,7 +43,12 @@ async function swFlow(swMan: Manifesto) {
 async function main() {
   console.log('Loader v 7')
 
-  if (Capacitor.getPlatform() === 'web') {
+  const isHttps = window.location.protocol.startsWith('https')
+  const isWeb = Capacitor.getPlatform() === 'web'
+
+  const isSWAllowed = isWeb && isHttps
+
+  if (isSWAllowed) {
     const swMan = await loadSWManifest()
 
     if (swMan) await swFlow(swMan)

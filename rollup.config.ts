@@ -21,7 +21,7 @@ import copyPlugin from 'rollup-plugin-copy'
 import { asyncReplace } from './tools/rollup/plugins/async-replace'
 
 const PORT = 10001
-const LOCAL_IP = os.networkInterfaces().en0?.[1].address
+const LOCAL_IP = os.networkInterfaces().en0?.[1].address || ''
 const DIST = './dist'
 const APP_MANIFEST_NAME = 'manifest.app.json'
 const SW_MANIFEST_NAME = 'manifest.sw.json'
@@ -59,6 +59,24 @@ const terser = () =>
     format: {
       comments: false,
     },
+  })
+
+const server = (host: string, port: number, secure: boolean) =>
+  isDev &&
+  serve({
+    contentBase: DIST,
+    host,
+    port,
+    https: secure ? https() : undefined,
+    historyApiFallback: true,
+  })
+
+const livereloader = (port: number, secure: boolean) =>
+  isDev &&
+  livereload({
+    watch: DIST,
+    port,
+    https: secure ? https() : undefined,
   })
 
 export default defineConfig(async () => {
@@ -190,20 +208,14 @@ export default defineConfig(async () => {
         },
       }),
 
-      isDev &&
-        serve({
-          contentBase: DIST,
-          // host: LOCAL_IP,
-          port: PORT,
-          https: https(),
-          historyApiFallback: true,
-        }),
-      isDev &&
-        livereload({
-          watch: DIST,
-          port: PORT,
-          https: https(),
-        }),
+      server('localhost', PORT, false),
+      server('localhost', PORT + 1, true),
+
+      server(LOCAL_IP, PORT, false),
+      server(LOCAL_IP, PORT + 1, true),
+
+      livereloader(PORT, false),
+      livereloader(PORT + 1, true),
     ],
 
     watch: {

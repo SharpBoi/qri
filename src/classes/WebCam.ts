@@ -44,17 +44,17 @@ export class WebCam {
 
   @action
   public async start(idealDeviceId?: string) {
-    const videoCfg: MediaTrackConstraints = {
-      frameRate: { ideal: 60 },
-      noiseSuppression: { ideal: true },
-      autoGainControl: { ideal: true },
-      zoom: 0,
-      width: { ideal: MAX_CAM_SIZE },
-      height: { ideal: MAX_CAM_SIZE },
-    }
-
-    if (idealDeviceId) videoCfg.deviceId = { ideal: idealDeviceId }
-    else videoCfg.facingMode = [FacingMode.environment]
+    const videoCfg: MediaTrackConstraints = idealDeviceId
+      ? { deviceId: { ideal: idealDeviceId } }
+      : {
+          facingMode: [FacingMode.environment],
+          frameRate: { ideal: 60 },
+          noiseSuppression: { ideal: true },
+          autoGainControl: { ideal: true },
+          zoom: 0,
+          width: { ideal: MAX_CAM_SIZE },
+          height: { ideal: MAX_CAM_SIZE },
+        }
 
     await this._start({
       audio: false,
