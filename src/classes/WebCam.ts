@@ -2,13 +2,8 @@ import { detectFacingMode, FacingMode } from '@/types/facing'
 import { enumerateDevices, getDeviceById, getDeviceByName } from '@/util/device'
 import { action, autorun, computed, makeObservable, observable } from 'mobx'
 
-export type CamProps = {
-  width?: number
-  height?: number
-}
-
-const MAX_CAM_WIDTH = 1024
-const MAX_CAM_HEIGHT = 2048
+const MAX_CAM_WIDTH = window.innerWidth * 1.5
+const MAX_CAM_HEIGHT = window.innerHeight * 1.5
 
 export class WebCam {
   public static get supported() {
@@ -21,13 +16,9 @@ export class WebCam {
   @observable public $deviceName?: string
 
   @observable.ref private $track?: MediaStreamTrack | null
-  @observable private $props: CamProps = {}
 
-  constructor(props?: CamProps) {
-    this.$props = props || {}
+  constructor() {
     makeObservable(this)
-
-    this.applySizeRX()
   }
 
   @computed public get $flip() {
@@ -68,12 +59,6 @@ export class WebCam {
   public stop() {
     this.$track?.stop()
     this.$stream?.stop?.()
-  }
-
-  @action
-  public setSize({ width, height }: Pick<CamProps, 'width' | 'height'>) {
-    this.$props.width = width
-    this.$props.height = height
   }
 
   /** @deprecated */
@@ -131,19 +116,6 @@ export class WebCam {
     this.$video.playsInline = true
     this.$video.controls = false
     this.$video.srcObject = this.$stream
-  }
-
-  private applySizeRX() {
-    autorun(() => {
-      if (!this.$track) return
-
-      const { height, width } = this.$props
-
-      this.$track.applyConstraints({
-        width,
-        height,
-      })
-    })
   }
 
   private async normalizeSize() {
