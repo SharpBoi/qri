@@ -36,7 +36,7 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
   useMount(() => {
     cam.stop()
 
-    cam.start($settings.camId)
+    cam.start($settings.camera?.name)
   })
   useUnmount(() => {
     scan.stop()
@@ -68,12 +68,12 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
     })
   }, [scan.$result])
 
-  function handleCamSelect(id: string) {
+  function handleCamSelect(name: string) {
     cam.stop()
 
-    settingsStore.set({ camId: id })
+    settingsStore.set({ camera: { name } })
 
-    cam.start(id)
+    cam.start(name)
   }
 
   async function handleFiles() {
@@ -114,10 +114,7 @@ export const CodeScanView = observer(({}: CodeScanViewProps) => {
         <Button className={style.file} onClick={handleFiles}>
           <FolderSVG />
         </Button>
-        <WebcamDropdownList
-          selectId={cam.$capabilities?.deviceId}
-          onSelect={handleCamSelect}
-        />
+        <WebcamDropdownList selectId={cam.$deviceName} onSelect={handleCamSelect} />
         <Button className={style.settings}>
           <HistorySVG />
         </Button>

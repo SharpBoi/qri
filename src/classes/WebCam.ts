@@ -1,4 +1,5 @@
 import { detectFacingMode, FacingMode } from '@/types/facing'
+import { enumerateDevices, getDeviceById, getDeviceByName } from '@/util/device'
 import { action, autorun, computed, makeObservable, observable } from 'mobx'
 
 export type CamProps = {
@@ -6,21 +7,18 @@ export type CamProps = {
   height?: number
 }
 
-const MAX_CAM_SIZE = 5000
+const MAX_CAM_WIDTH = 1024
+const MAX_CAM_HEIGHT = 2048
 
 export class WebCam {
   public static get supported() {
     return !!navigator?.mediaDevices?.getUserMedia
   }
 
-  public static async enumerate() {
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    return devices.filter(d => d.kind === 'videoinput')
-  }
-
   @observable.ref public $stream?: MediaStream
   @observable.ref public $video?: HTMLVideoElement
   @observable.ref public $capabilities?: MediaTrackSettings
+  @observable public $deviceName?: string
 
   @observable.ref private $track?: MediaStreamTrack | null
   @observable private $props: CamProps = {}
@@ -43,18 +41,23 @@ export class WebCam {
   }
 
   @action
-  public async start(idealDeviceId?: string) {
-    const videoCfg: MediaTrackConstraints = idealDeviceId
-      ? { deviceId: { ideal: idealDeviceId } }
-      : {
-          facingMode: [FacingMode.environment],
-          frameRate: { ideal: 60 },
-          noiseSuppression: { ideal: true },
-          autoGainControl: { ideal: true },
-          zoom: 0,
-          width: { ideal: MAX_CAM_SIZE },
-          height: { ideal: MAX_CAM_SIZE },
-        }
+  public async start(name?: string) {
+    const deviceId = await getDeviceByName(name || '').then(d => d?.deviceId)
+
+    const videoCfg: MediaTrackConstraints = {
+      frameRate: { ideal: 60 },
+      noiseSuppression: { ideal: true },
+      autoGainControl: { ideal: true },
+      zoom: 0,
+      width: { ideal: MAX_CAM_WIDTH },
+      height: { ideal: MAX_CAM_HEIGHT },
+    }
+
+    if (deviceId) {
+      videoCfg.deviceId = { ideal: deviceId }
+    } else {
+      videoCfg.facingMode = [FacingMode.environment]
+    }
 
     await this._start({
       audio: false,
@@ -87,7 +90,7 @@ export class WebCam {
     //   },
     // })
 
-    const devices = await WebCam.enumerate()
+    const devices = await enumerateDevices()
     const last = devices.at(-1)
 
     const media = await navigator.mediaDevices.getUserMedia({
@@ -115,6 +118,10 @@ export class WebCam {
     this.$track = this.$stream.getVideoTracks()[0]
 
     this.$capabilities = this.$track.getSettings()
+
+    this.$deviceName = await getDeviceById(this.$capabilities.deviceId || '').then(
+      d => d?.label
+    )
 
     await this.normalizeSize()
 
