@@ -1,9 +1,9 @@
 import { detectFacingMode, FacingMode } from '@/types/facing'
 import { enumerateDevices, getDeviceById, getDeviceByName } from '@/util/device'
-import { action, autorun, computed, makeObservable, observable } from 'mobx'
+import { action, computed, makeObservable, observable } from 'mobx'
 
-const MAX_CAM_WIDTH = window.innerWidth * 1.5
-const MAX_CAM_HEIGHT = window.innerHeight * 1.5
+const MAX_CAM_WIDTH = 500 //window.innerWidth * 2
+const MAX_CAM_HEIGHT = 500
 
 export class WebCam {
   public static get supported() {

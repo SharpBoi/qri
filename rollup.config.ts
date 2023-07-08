@@ -214,8 +214,8 @@ export default defineConfig(async () => {
       server(LOCAL_IP, PORT, false),
       server(LOCAL_IP, PORT + 1, true),
 
-      livereloader(PORT, false),
-      livereloader(PORT + 1, true),
+      // livereloader(PORT, false),
+      // livereloader(PORT + 1, true),
     ],
 
     watch: {

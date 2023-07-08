@@ -1,10 +1,7 @@
 import { ScanResult } from '@/types/img-scan-result'
-import { createVideo, screenshotVideo, videoFromStream } from '@/util/video'
-import { BrowserQRCodeReader, IScannerControls } from '@zxing/browser'
-import { BarcodeFormat, DecodeHintType } from '@zxing/library'
+import { screenshotVideo, videoFromStream } from '@/util/video'
+import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser'
 import { action, makeObservable, observable } from 'mobx'
-
-const HINTS = new Map([[DecodeHintType.POSSIBLE_FORMATS, BarcodeFormat.QR_CODE]])
 
 export class BarcodeScan {
   @observable.ref public $result?: ScanResult
@@ -17,7 +14,7 @@ export class BarcodeScan {
   }
 
   public async scanImage(imgUrl: string) {
-    const reader = new BrowserQRCodeReader(HINTS)
+    const reader = new BrowserMultiFormatReader()
 
     const r = await reader.decodeFromImageUrl(imgUrl)
 
@@ -30,7 +27,7 @@ export class BarcodeScan {
 
     this.video = videoFromStream(videoStream)
 
-    const reader = new BrowserQRCodeReader(HINTS)
+    const reader = new BrowserMultiFormatReader()
 
     this.decoder = await reader.decodeFromStream(videoStream, undefined, async result => {
       if (!result) return (this.$result = undefined)
